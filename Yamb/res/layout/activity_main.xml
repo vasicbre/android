@@ -9,7 +9,9 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="rs.ac.bg.etf.vn110012d.MainActivity"
-    android:gravity="center" >
+    android:gravity="center" 
+    android:background="@drawable/yamb_background" 
+   >
 
     <RelativeLayout
         android:layout_width="wrap_content"
@@ -22,6 +24,7 @@
         android:layout_height="wrap_content"
         android:text="@string/new_game"
         android:layout_alignParentTop="true"
+        android:alpha="1" 
         />
 
     <Button
@@ -43,6 +46,18 @@
         android:layout_alignRight="@id/new_game_button"
         android:layout_alignLeft="@id/new_game_button"
         />
+
+    <Button
+        android:id="@+id/resume_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignRight="@id/new_game_button"
+        android:layout_alignLeft="@id/new_game_button"
+        android:layout_below="@id/settings_button"
+        android:text="@string/resume" 
+        android:visibility="gone"
+        />
+
     </RelativeLayout>
 
 </LinearLayout>
