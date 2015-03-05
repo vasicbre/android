@@ -23,5 +23,7 @@
     <string name="poker">poker</string>
     <string name="yamb">yamb</string>
     <string name="min">min</string>
+    <string name="play">Play</string>
+    <string name="cancel">Cancel</string>
 
 </resources>
