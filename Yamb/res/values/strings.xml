@@ -9,5 +9,19 @@
     <string name="settings">Settings</string>
     <string name="resume">Resume</string>
     <string name="player_1">Player 1</string>
+    <string name="straight">straight</string>
+    <string name="_1">1</string>
+    <string name="_2">2</string>
+    <string name="_3">3</string>
+    <string name="_4">4</string>
+    <string name="_5">5</string>
+    <string name="_6">6</string>
+    <string name="_u2211">\u2211</string>
+    <string name="max">max</string>
+    <string name="triling">triling</string>
+    <string name="full">full</string>
+    <string name="poker">poker</string>
+    <string name="yamb">yamb</string>
+    <string name="min">min</string>
 
 </resources>
