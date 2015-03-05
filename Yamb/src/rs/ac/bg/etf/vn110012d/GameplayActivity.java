@@ -31,8 +31,12 @@ public class GameplayActivity extends Activity {
 		populateScoreCells(R.id.num_sum);
 		populateScoreCells(R.id.min_max_sum);
 		populateScoreCells(R.id.spec_sum);
+		loadDice();
 	}
 
+	private void loadDice() {
+				
+	}
 	private void populateInputCells(int id, int cnt) {
 		GridView num_grid = (GridView) findViewById(id);
 
