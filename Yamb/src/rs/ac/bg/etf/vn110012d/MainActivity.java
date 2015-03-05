@@ -56,31 +56,32 @@ public class MainActivity extends Activity implements
 	}
 
 	public void showDialog() {
-		final Dialog d = new Dialog(MainActivity.this);
-		d.setTitle("Number of players");
-		d.setContentView(R.layout.dialog);
-		Button play = (Button) d.findViewById(R.id.play_button);
-		Button cancel = (Button) d.findViewById(R.id.cancel_button);
-		final NumberPicker np = (NumberPicker) d
+		final Dialog dialog = new Dialog(MainActivity.this);
+		dialog.setTitle("Set number of players");
+		dialog.setContentView(R.layout.dialog);
+		Button play = (Button) dialog.findViewById(R.id.play_button);
+		Button cancel = (Button) dialog.findViewById(R.id.cancel_button);
+		final NumberPicker np = (NumberPicker) dialog
 				.findViewById(R.id.number_picker);
-		np.setMaxValue(100);
-		np.setMinValue(0);
+		np.setMaxValue(5);
+		np.setMinValue(1);
 		np.setWrapSelectorWheel(false);
 		np.setOnValueChangedListener(this);
 		play.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Intent intent = new Intent(getApplicationContext(),	GameplayActivity.class);
+				Intent intent = new Intent(getApplicationContext(),
+						GameplayActivity.class);
 				startActivity(intent);
 			}
 		});
 		cancel.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				d.dismiss();
+				dialog.dismiss();
 			}
 		});
-		d.show();
+		dialog.show();
 
 	}
 
