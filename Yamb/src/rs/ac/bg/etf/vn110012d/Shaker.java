@@ -29,10 +29,6 @@ public class Shaker implements SensorEventListener {
 				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		senSensorManager.registerListener(this, senAccelerometer,
 				SensorManager.SENSOR_DELAY_NORMAL);
-
-		senSensorManager.registerListener(this,
-				senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER),
-				SensorManager.SENSOR_DELAY_UI);
 	}
 
 	public interface Callback {
