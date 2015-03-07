@@ -362,6 +362,8 @@
                         android:src="@drawable/six_die"
                         tools:ignore="ContentDescription" />
                 </LinearLayout>
+                
+
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

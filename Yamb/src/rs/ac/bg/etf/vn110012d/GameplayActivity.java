@@ -15,11 +15,14 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 public class GameplayActivity extends Activity {
 
+	int[] diceValues;
+	boolean[] selectedDice;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -35,8 +38,107 @@ public class GameplayActivity extends Activity {
 	}
 
 	private void loadDice() {
-				
+		ImageView[] dice = new ImageView[6];
+		diceValues = new int[6];
+		selectedDice = new boolean[6];
+		for (int i = 0; i < 6; i++) {
+			diceValues[i] = i + 1;
+			selectedDice[i] = false;
+		}
+
+		for (int i = 0; i < 6; i++) {
+			dice[i] = (ImageView) findViewById(diceSlotId(i));
+			dice[i].setOnClickListener(new View.OnClickListener() {
+
+				@Override
+				public void onClick(View v) {
+					switch (v.getId()) {
+					case R.id.die1:
+						selectDice((ImageView) v, 0);
+						break;
+					case R.id.die2:
+						selectDice((ImageView) v, 1);
+						break;
+					case R.id.die3:
+						selectDice((ImageView) v, 2);
+						break;
+					case R.id.die4:
+						selectDice((ImageView) v, 3);
+						break;
+					case R.id.die5:
+						selectDice((ImageView) v, 4);
+						break;
+					case R.id.die6:
+						selectDice((ImageView) v, 5);
+						break;
+					}
+
+				}
+			});
+		}
 	}
+
+	private void selectDice(ImageView iv, int ord) {
+		selectedDice[ord] = !selectedDice[ord];
+		iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
+	}
+
+	private int diceId(int ord, boolean selected) {
+		switch (ord) {
+		case 0:
+			if (selected)
+				return R.drawable.one_die_red;
+			else
+				return R.drawable.one_die;
+		case 1:
+			if (selected)
+				return R.drawable.two_die_red;
+			else
+				return R.drawable.two_die;
+		case 2:
+			if (selected)
+				return R.drawable.three_die_red;
+			else
+				return R.drawable.three_die;
+		case 3:
+			if (selected)
+				return R.drawable.four_die_red;
+			else
+				return R.drawable.four_die;
+		case 4:
+			if (selected)
+				return R.drawable.five_die_red;
+			else
+				return R.drawable.five_die;
+		case 5:
+			if (selected)
+				return R.drawable.six_die_red;
+			else
+				return R.drawable.six_die;
+		default:
+			return -1;
+		}
+	}
+
+	private int diceSlotId(int ord) {
+		switch (ord) {
+		case 0:
+			return R.id.die1;
+		case 1:
+			return R.id.die2;
+		case 2:
+			return R.id.die3;
+		case 3:
+			return R.id.die4;
+		case 4:
+			return R.id.die5;
+		case 5:
+			return R.id.die6;
+		default:
+			return -1;
+		}
+	}
+
 	private void populateInputCells(int id, int cnt) {
 		GridView num_grid = (GridView) findViewById(id);
 
@@ -164,6 +266,38 @@ public class GameplayActivity extends Activity {
 			String s = strlist.get(position);
 
 			tv.setText(s);
+
+			return convertView;
+		}
+	}
+
+	public class DiceAdapter extends ArrayAdapter<Integer> {
+
+		private List<Integer> idlist;
+		private Context context;
+
+		public DiceAdapter(List<Integer> idlist, Context ctx) {
+			super(ctx, R.layout.die_cell, idlist);
+			this.idlist = idlist;
+			this.context = ctx;
+		}
+
+		public View getView(int position, View convertView, ViewGroup parent) {
+
+			// First let's verify the convertView is not null
+			if (convertView == null) {
+				// This a new view we inflate the new layout
+				LayoutInflater inflater = (LayoutInflater) context
+						.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+				convertView = inflater
+						.inflate(R.layout.die_cell, parent, false);
+			}
+			// Now we can fill the layout with the right values
+			ImageView iv = (ImageView) findViewById(R.id.die);
+
+			int id = idlist.get(position);
+
+			iv.setImageResource(id);
 
 			return convertView;
 		}

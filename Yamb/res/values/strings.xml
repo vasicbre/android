@@ -26,5 +26,6 @@
     <string name="play">Play</string>
     <string name="cancel">Cancel</string>
     <string name="total_score_0">total score: 0</string>
+    <string name="die">Die</string>
 
 </resources>
