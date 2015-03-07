@@ -5,10 +5,7 @@ import java.util.List;
 
 import android.app.Activity;
 import android.content.Context;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -23,16 +20,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class GameplayActivity extends Activity implements SensorEventListener {
+public class GameplayActivity extends Activity implements Shaker.Callback {
 
 	int[] diceValues;
 	boolean[] selectedDice;
 
-	private SensorManager senSensorManager;
-	private Sensor senAccelerometer;
-	private long lastUpdate = 0;
-	private float last_x, last_y, last_z;
-	private static final int SHAKE_THRESHOLD = 600;
+	private static final int SHAKE_THRESHOLD = 400;
+	private static final int END_SHAKE_TIME_GAP = 600;
+
+	private MediaPlayer mp;
+	Shaker s;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -46,25 +43,7 @@ public class GameplayActivity extends Activity implements SensorEventListener {
 		populateScoreCells(R.id.spec_sum);
 		loadDice();
 
-		senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-		senAccelerometer = senSensorManager
-				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		senSensorManager.registerListener(this, senAccelerometer,
-				SensorManager.SENSOR_DELAY_NORMAL);
-
-	}
-
-	@Override
-	protected void onPause() {
-		super.onPause();
-		senSensorManager.unregisterListener(this);
-	}
-
-	@Override
-	protected void onResume() {
-		super.onResume();
-		senSensorManager.registerListener(this, senAccelerometer,
-				SensorManager.SENSOR_DELAY_NORMAL);
+		s = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
 	}
 
 	private void loadDice() {
@@ -253,7 +232,6 @@ public class GameplayActivity extends Activity implements SensorEventListener {
 
 		public View getView(int position, View convertView, ViewGroup parent) {
 
-			// First let's verify the convertView is not null
 			if (convertView == null) {
 				// This a new view we inflate the new layout
 				LayoutInflater inflater = (LayoutInflater) context
@@ -261,7 +239,6 @@ public class GameplayActivity extends Activity implements SensorEventListener {
 				convertView = inflater.inflate(R.layout.grid_cell, parent,
 						false);
 			}
-			// Now we can fill the layout with the right values
 			TextView tv = (TextView) convertView.findViewById(R.id.num);
 			String s = strlist.get(position);
 
@@ -283,8 +260,6 @@ public class GameplayActivity extends Activity implements SensorEventListener {
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
-
-			// First let's verify the convertView is not null
 			if (convertView == null) {
 				// This a new view we inflate the new layout
 				LayoutInflater inflater = (LayoutInflater) context
@@ -292,7 +267,6 @@ public class GameplayActivity extends Activity implements SensorEventListener {
 				convertView = inflater
 						.inflate(R.layout.sum_cell, parent, false);
 			}
-			// Now we can fill the layout with the right values
 			TextView tv = (TextView) convertView.findViewById(R.id.num);
 			String s = strlist.get(position);
 
@@ -302,41 +276,9 @@ public class GameplayActivity extends Activity implements SensorEventListener {
 		}
 	}
 
-	public class DiceAdapter extends ArrayAdapter<Integer> {
-
-		private List<Integer> idlist;
-		private Context context;
-
-		public DiceAdapter(List<Integer> idlist, Context ctx) {
-			super(ctx, R.layout.die_cell, idlist);
-			this.idlist = idlist;
-			this.context = ctx;
-		}
-
-		public View getView(int position, View convertView, ViewGroup parent) {
-
-			// First let's verify the convertView is not null
-			if (convertView == null) {
-				// This a new view we inflate the new layout
-				LayoutInflater inflater = (LayoutInflater) context
-						.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				convertView = inflater
-						.inflate(R.layout.die_cell, parent, false);
-			}
-			// Now we can fill the layout with the right values
-			ImageView iv = (ImageView) findViewById(R.id.die);
-
-			int id = idlist.get(position);
-
-			iv.setImageResource(id);
-
-			return convertView;
-		}
-	}
-	
 	void rollDice() {
-		for(int i = 0; i < 6; i++) {
-			if(!selectedDice[i]) {
+		for (int i = 0; i < 6; i++) {
+			if (!selectedDice[i]) {
 				diceValues[i] = (int) (Math.random() * 6) + 1;
 				ImageView iv = (ImageView) findViewById(diceSlotId(i));
 				iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
@@ -344,45 +286,21 @@ public class GameplayActivity extends Activity implements SensorEventListener {
 		}
 	}
 
-	@Override
-	public void onSensorChanged(SensorEvent sensorEvent) {
-		Sensor mySensor = sensorEvent.sensor;
-
-		if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-			float x = sensorEvent.values[0];
-			float y = sensorEvent.values[1];
-			float z = sensorEvent.values[2];
-
-			// check whether more than 100 milliseconds have passed since the
-			// last time onSensorChanged was invoked
-			long curTime = System.currentTimeMillis();
-
-			if ((curTime - lastUpdate) > 100) {
-				long diffTime = (curTime - lastUpdate);
-				lastUpdate = curTime;
-
-				float speed = Math.abs(x + y + z - last_x - last_y - last_z)
-						/ diffTime * 10000;
-
-				if (speed > SHAKE_THRESHOLD) {
-					Toast toast = Toast.makeText(getApplicationContext(),
-							"Shake Shake Shake !!!", Toast.LENGTH_SHORT);
-					toast.show();
-					
-					rollDice();
-				}
-
-				last_x = x;
-				last_y = y;
-				last_z = z;
-			}
+	public void shakingStarted() {
+		if (mp == null || !mp.isPlaying()) {
+			mp = MediaPlayer.create(getApplicationContext(), R.raw.shake);
+			mp.start();
 		}
 
+		rollDice();
 	}
 
-	@Override
-	public void onAccuracyChanged(Sensor sensor, int accuracy) {
-		// TODO Auto-generated method stub
+	public void shakingStopped() {
+		if (mp != null) {
+			mp.stop();
+		}
 
+		mp = MediaPlayer.create(getApplicationContext(), R.raw.roll);
+		mp.start();
 	}
 }
