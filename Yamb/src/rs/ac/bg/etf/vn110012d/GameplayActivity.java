@@ -24,12 +24,17 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 
 	int[] diceValues;
 	boolean[] selectedDice;
+	boolean[] lockedDice;
+
+	int move;
 
 	private static final int SHAKE_THRESHOLD = 400;
 	private static final int END_SHAKE_TIME_GAP = 600;
 
 	private MediaPlayer mp;
 	Shaker s;
+	
+	Player p;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -44,16 +49,20 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		loadDice();
 
 		s = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
+		
+		p = new Player();
 	}
 
 	private void loadDice() {
 		ImageView[] dice = new ImageView[6];
 		diceValues = new int[6];
 		selectedDice = new boolean[6];
-
+		lockedDice = new boolean[6];
+		
 		for (int i = 0; i < 6; i++) {
 			diceValues[i] = i + 1;
 			selectedDice[i] = false;
+			lockedDice[i] = false;
 		}
 
 		for (int i = 0; i < 6; i++) {
@@ -89,8 +98,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	}
 
 	private void selectDice(ImageView iv, int ord) {
-		selectedDice[ord] = !selectedDice[ord];
-		iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
+		if (move > 0 && !lockedDice[ord]) {
+			selectedDice[ord] = !selectedDice[ord];
+			iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
+		}
 	}
 
 	private int diceId(int ord, boolean selected) {
@@ -169,10 +180,25 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 				Toast toast = Toast.makeText(getApplicationContext(),
 						"Numbers: " + position / 6 + "," + position % 6,
 						Toast.LENGTH_SHORT);
+				
+				//view.findViewById(R.id.num).setBackgroundResource(R.color.invalid_blue);
+				
 				toast.show();
+								
+				resetMove();
 			}
 		});
 
+	}
+	
+	private void resetMove() {
+		move = 0;
+		
+		for(int i = 0; i < 6; i++) {
+			selectedDice[i] = false;
+			ImageView iv = (ImageView) findViewById(diceSlotId(i));
+			iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
+		}
 	}
 
 	private void populateScoreCells(int id) {
@@ -283,10 +309,16 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 				ImageView iv = (ImageView) findViewById(diceSlotId(i));
 				iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
 			}
+			else {
+				lockedDice[i] = true;
+			}
 		}
 	}
 
 	public void shakingStarted() {
+		if(move == 3)
+			return;
+		
 		if (mp == null || !mp.isPlaying()) {
 			mp = MediaPlayer.create(getApplicationContext(), R.raw.shake);
 			mp.start();
@@ -296,11 +328,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	}
 
 	public void shakingStopped() {
+		if(move == 3)
+			return;
+		
 		if (mp != null) {
 			mp.stop();
 		}
 
 		mp = MediaPlayer.create(getApplicationContext(), R.raw.roll);
 		mp.start();
+		move++;
 	}
 }
