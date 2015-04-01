@@ -70,6 +70,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		selectedDice = new boolean[6];
 		lockedDice = new boolean[6];
 
+		// intit dice
 		for (int i = 0; i < 6; i++) {
 			diceValues[i] = i + 1;
 			selectedDice[i] = false;
@@ -109,6 +110,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	}
 
 	private void selectDice(ImageView iv, int ord) {
+		// change selection is available only for dice that are not selected in
+		// previous moves after the first move
 		if (move > 0 && !lockedDice[ord]) {
 			selectedDice[ord] = !selectedDice[ord];
 			iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
@@ -178,7 +181,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		for (int i = 0; i < cnt; i++)
 			strs.add("");
 
-		ArrayAdapter<String> adapter = new LightCellAdapter(strs, this, p);
+		ArrayAdapter<String> adapter = new InputCellAdapter(strs, this, p);
 
 		num_grid.setAdapter(adapter);
 
@@ -208,11 +211,11 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		GridView gv = (GridView) findViewById(id);
 		for (int i = 0; i < gv.getChildCount(); i++)
 			if (p.isAvailable(id, i / 6, i % 6))
-				gv.getChildAt(i)
-					.findViewById(R.id.num)
+				gv.getChildAt(i).findViewById(R.id.num)
 						.setBackgroundResource(R.color.lighter_blue);
 	}
 
+	// prepare dice for next move, called when value is entered
 	private void resetMove() {
 		move = 0;
 
@@ -230,20 +233,9 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		for (int i = 0; i < 6; i++)
 			strs.add("");
 
-		ArrayAdapter<String> adapter = new DarkCellAdapter(strs, this);
+		ArrayAdapter<String> adapter = new ScoreCellAdapter(strs, this);
 
 		sum_grid.setAdapter(adapter);
-
-		/*
-		 * sum_grid.setOnItemClickListener(new OnItemClickListener() {
-		 * 
-		 * @Override public void onItemClick(AdapterView<?> parent, View view,
-		 * int position, long id) {
-		 * 
-		 * Toast toast = Toast .makeText(getApplicationContext(), "Sum: " +
-		 * position / 6 + "," + position % 6, Toast.LENGTH_SHORT); toast.show();
-		 * } });
-		 */
 	}
 
 	@Override
@@ -265,13 +257,13 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		return super.onOptionsItemSelected(item);
 	}
 
-	public class LightCellAdapter extends ArrayAdapter<String> {
+	public class InputCellAdapter extends ArrayAdapter<String> {
 
 		private List<String> strlist;
 		private Context context;
 		private Player p;
 
-		public LightCellAdapter(List<String> strlist, Context ctx, Player p) {
+		public InputCellAdapter(List<String> strlist, Context ctx, Player p) {
 			super(ctx, R.layout.grid_cell, strlist);
 			this.strlist = strlist;
 			this.context = ctx;
@@ -299,12 +291,12 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		}
 	}
 
-	public class DarkCellAdapter extends ArrayAdapter<String> {
+	public class ScoreCellAdapter extends ArrayAdapter<String> {
 
 		private List<String> strlist;
 		private Context context;
 
-		public DarkCellAdapter(List<String> strlist, Context ctx) {
+		public ScoreCellAdapter(List<String> strlist, Context ctx) {
 			super(ctx, R.layout.sum_cell, strlist);
 			this.strlist = strlist;
 			this.context = ctx;
@@ -327,6 +319,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		}
 	}
 
+	// roll unselected dice
 	void rollDice() {
 		for (int i = 0; i < 6; i++) {
 			if (!selectedDice[i]) {
@@ -334,6 +327,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 				ImageView iv = (ImageView) findViewById(diceSlotId(i));
 				iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
 			} else {
+				// lock die so it's selection cannot be changed in the next move
 				lockedDice[i] = true;
 			}
 		}
