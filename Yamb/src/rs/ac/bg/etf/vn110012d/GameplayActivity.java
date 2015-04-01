@@ -32,13 +32,16 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	private static final int END_SHAKE_TIME_GAP = 600;
 
 	private MediaPlayer mp;
-	Shaker s;	
+	Shaker s;
 	Player p;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.game_layout);
+
+		p = new Player();
+
 		populateInputCells(R.id.num_board_grid, 36);
 		populateInputCells(R.id.min_max_grid, 12);
 		populateInputCells(R.id.spec_grid, 30);
@@ -49,15 +52,13 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 
 		s = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
 		s.register();
-		
-		p = new Player();
 	}
-	
+
 	protected void onPause() {
 		super.onPause();
 		s.unregister();
 	}
-	
+
 	protected void onResume() {
 		super.onResume();
 		s.register();
@@ -68,7 +69,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		diceValues = new int[6];
 		selectedDice = new boolean[6];
 		lockedDice = new boolean[6];
-		
+
 		for (int i = 0; i < 6; i++) {
 			diceValues[i] = i + 1;
 			selectedDice[i] = false;
@@ -177,7 +178,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		for (int i = 0; i < cnt; i++)
 			strs.add("");
 
-		ArrayAdapter<String> adapter = new LightCellAdapter(strs, this);
+		ArrayAdapter<String> adapter = new LightCellAdapter(strs, this, p);
 
 		num_grid.setAdapter(adapter);
 
@@ -187,24 +188,35 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 
-				Toast toast = Toast.makeText(getApplicationContext(),
-						"Numbers: " + position / 6 + "," + position % 6,
-						Toast.LENGTH_SHORT);
-				
-				//view.findViewById(R.id.num).setBackgroundResource(R.color.invalid_blue);
-				
-				toast.show();
-								
-				resetMove();
+				if (p.isAvailable(parent.getId(), position / 6, position % 6)) {
+					TextView tv = (TextView) view.findViewById(R.id.num);
+					tv.setBackgroundResource(R.color.invalid_blue);
+					tv.setText("2");
+					p.set(parent.getId(), position / 6, position % 6, 2);
+					resetAvailavility(R.id.num_board_grid);
+					resetAvailavility(R.id.min_max_grid);
+					resetAvailavility(R.id.spec_grid);
+					resetMove();
+				}
 			}
 		});
 
 	}
-	
+
+	// set cells available for entry
+	private void resetAvailavility(int id) {
+		GridView gv = (GridView) findViewById(id);
+		for (int i = 0; i < gv.getChildCount(); i++)
+			if (p.isAvailable(id, i / 6, i % 6))
+				gv.getChildAt(i)
+					.findViewById(R.id.num)
+						.setBackgroundResource(R.color.lighter_blue);
+	}
+
 	private void resetMove() {
 		move = 0;
-		
-		for(int i = 0; i < 6; i++) {
+
+		for (int i = 0; i < 6; i++) {
 			selectedDice[i] = false;
 			ImageView iv = (ImageView) findViewById(diceSlotId(i));
 			iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
@@ -222,18 +234,16 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 
 		sum_grid.setAdapter(adapter);
 
-		/*sum_grid.setOnItemClickListener(new OnItemClickListener() {
-
-			@Override
-			public void onItemClick(AdapterView<?> parent, View view,
-					int position, long id) {
-
-				Toast toast = Toast
-						.makeText(getApplicationContext(), "Sum: " + position
-								/ 6 + "," + position % 6, Toast.LENGTH_SHORT);
-				toast.show();
-			}
-		});*/
+		/*
+		 * sum_grid.setOnItemClickListener(new OnItemClickListener() {
+		 * 
+		 * @Override public void onItemClick(AdapterView<?> parent, View view,
+		 * int position, long id) {
+		 * 
+		 * Toast toast = Toast .makeText(getApplicationContext(), "Sum: " +
+		 * position / 6 + "," + position % 6, Toast.LENGTH_SHORT); toast.show();
+		 * } });
+		 */
 	}
 
 	@Override
@@ -259,11 +269,13 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 
 		private List<String> strlist;
 		private Context context;
+		private Player p;
 
-		public LightCellAdapter(List<String> strlist, Context ctx) {
+		public LightCellAdapter(List<String> strlist, Context ctx, Player p) {
 			super(ctx, R.layout.grid_cell, strlist);
 			this.strlist = strlist;
 			this.context = ctx;
+			this.p = p;
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
@@ -279,6 +291,9 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 			String s = strlist.get(position);
 
 			tv.setText(s);
+
+			if (!p.isAvailable(parent.getId(), position / 6, position % 6))
+				tv.setBackgroundResource(R.color.invalid_blue);
 
 			return convertView;
 		}
@@ -318,17 +333,16 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 				diceValues[i] = (int) (Math.random() * 6) + 1;
 				ImageView iv = (ImageView) findViewById(diceSlotId(i));
 				iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
-			}
-			else {
+			} else {
 				lockedDice[i] = true;
 			}
 		}
 	}
 
 	public void shakingStarted() {
-		if(move == 3)
+		if (move == 3)
 			return;
-		
+
 		if (mp == null || !mp.isPlaying()) {
 			mp = MediaPlayer.create(getApplicationContext(), R.raw.shake);
 			mp.start();
@@ -338,9 +352,9 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	}
 
 	public void shakingStopped() {
-		if(move == 3)
+		if (move == 3)
 			return;
-		
+
 		if (mp != null) {
 			mp.stop();
 		}
