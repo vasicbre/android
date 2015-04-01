@@ -32,8 +32,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	private static final int END_SHAKE_TIME_GAP = 600;
 
 	private MediaPlayer mp;
-	Shaker s;
-	
+	Shaker s;	
 	Player p;
 
 	@Override
@@ -49,8 +48,19 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		loadDice();
 
 		s = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
+		s.register();
 		
 		p = new Player();
+	}
+	
+	protected void onPause() {
+		super.onPause();
+		s.unregister();
+	}
+	
+	protected void onResume() {
+		super.onResume();
+		s.register();
 	}
 
 	private void loadDice() {
@@ -212,7 +222,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 
 		sum_grid.setAdapter(adapter);
 
-		sum_grid.setOnItemClickListener(new OnItemClickListener() {
+		/*sum_grid.setOnItemClickListener(new OnItemClickListener() {
 
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
@@ -223,7 +233,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 								/ 6 + "," + position % 6, Toast.LENGTH_SHORT);
 				toast.show();
 			}
-		});
+		});*/
 	}
 
 	@Override

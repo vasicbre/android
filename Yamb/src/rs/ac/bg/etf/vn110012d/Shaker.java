@@ -1,4 +1,4 @@
-package rs.ac.bg.etf.vn110012d;
+package rs.ac.bg.etf.vn110012d; 
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -16,19 +16,17 @@ public class Shaker implements SensorEventListener {
 	private long lastShake;
 	private long timeGap;
 	private Shaker.Callback cb;
+	private Context context;
 
 	public Shaker(Context context, int shakeTreshold, long timeGap,
 			Shaker.Callback cb) {
 		this.shakeTreshold = shakeTreshold;
 		this.timeGap = timeGap;
 		this.cb = cb;
-
-		senSensorManager = (SensorManager) context
-				.getSystemService(Context.SENSOR_SERVICE);
-		senAccelerometer = senSensorManager
-				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		senSensorManager.registerListener(this, senAccelerometer,
-				SensorManager.SENSOR_DELAY_NORMAL);
+		this.context = context;
+		
+		register();
+		
 	}
 
 	public interface Callback {
@@ -36,6 +34,21 @@ public class Shaker implements SensorEventListener {
 
 		void shakingStopped();
 	}
+	
+	public void register() {
+		senSensorManager = (SensorManager) context
+				.getSystemService(Context.SENSOR_SERVICE);
+		senAccelerometer = senSensorManager
+				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+		senSensorManager.registerListener(this, senAccelerometer,
+				SensorManager.SENSOR_DELAY_NORMAL);
+	}
+	
+	public void unregister() {
+		senSensorManager.unregisterListener(this);
+	}
+	
+	
 
 	private void shaking() {
 		long now = SystemClock.uptimeMillis();
