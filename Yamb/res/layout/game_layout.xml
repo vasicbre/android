@@ -7,14 +7,38 @@
     android:background="@color/background_blue"
     android:orientation="vertical" >
 
-    <TextView
-        android:id="@+id/player_id"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_margin="1dp"
-        android:text="@string/player_1"
-        android:textSize="22sp" />
+        android:gravity="center_horizontal"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:id="@+id/move_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="left"
+            android:layout_marginRight="20dp"
+            android:text="@string/move_"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/player_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginRight="20dp"
+            android:text="@string/player_1"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/roll_id"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:text="@string/roll_"
+            android:textSize="22sp" />
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/grame_layout"
@@ -293,10 +317,10 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginLeft="2dp"
-                    android:layout_marginTop="2dp"
                     android:layout_marginBottom="2dp"
+                    android:layout_marginLeft="2dp"
                     android:layout_marginRight="5dp"
+                    android:layout_marginTop="2dp"
                     android:background="@color/darker_blue"
                     android:gravity="center"
                     android:text="@string/total_score_0"
@@ -362,8 +386,6 @@
                         android:src="@drawable/six_die"
                         tools:ignore="ContentDescription" />
                 </LinearLayout>
-                
-
             </LinearLayout>
         </LinearLayout>
     </LinearLayout>

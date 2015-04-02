@@ -1,6 +1,7 @@
 package rs.ac.bg.etf.vn110012d;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import android.app.Activity;
@@ -20,13 +21,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class GameplayActivity extends Activity implements Shaker.Callback {
+public class GameplayActivity extends Activity implements Shaker.Callback,
+		Player.Callback {
 
 	int[] diceValues;
 	boolean[] selectedDice;
 	boolean[] lockedDice;
-
-	int move;
 
 	private static final int SHAKE_THRESHOLD = 400;
 	private static final int END_SHAKE_TIME_GAP = 600;
@@ -35,12 +35,17 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	Shaker s;
 	Player p;
 
+	TextView tvMove, tvRoll;
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.game_layout);
 
-		p = new Player();
+		tvMove = (TextView) findViewById(R.id.move_id);
+		tvRoll = (TextView) findViewById(R.id.roll_id);
+
+		p = new Player(this);
 
 		populateInputCells(R.id.num_board_grid, 36);
 		populateInputCells(R.id.min_max_grid, 12);
@@ -70,7 +75,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 		selectedDice = new boolean[6];
 		lockedDice = new boolean[6];
 
-		// intit dice
+		// init dice
 		for (int i = 0; i < 6; i++) {
 			diceValues[i] = i + 1;
 			selectedDice[i] = false;
@@ -112,7 +117,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	private void selectDice(ImageView iv, int ord) {
 		// change selection is available only for dice that are not selected in
 		// previous moves after the first move
-		if (move > 0 && !lockedDice[ord]) {
+		if (p.getRoll() > 0 && !lockedDice[ord]) {
 			selectedDice[ord] = !selectedDice[ord];
 			iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
 		}
@@ -192,18 +197,24 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 					int position, long id) {
 
 				if (p.isAvailable(parent.getId(), position / 6, position % 6)) {
-					TextView tv = (TextView) view.findViewById(R.id.num);
-					tv.setBackgroundResource(R.color.invalid_blue);
-					tv.setText("2");
-					p.set(parent.getId(), position / 6, position % 6, 2);
-					resetAvailavility(R.id.num_board_grid);
-					resetAvailavility(R.id.min_max_grid);
-					resetAvailavility(R.id.spec_grid);
-					resetMove();
+					if (p.isCall(parent.getId(), position % 6)) {
+						p.call(view, position, parent.getId());
+					} else {
+						enterValue(view, position, parent.getId());
+					}
 				}
 			}
 		});
+	}
 
+	public void enterValue(View view, int position, int parentId) {
+		TextView tv = (TextView) view.findViewById(R.id.num);
+		tv.setBackgroundResource(R.color.invalid_blue);
+		int value = p.calculateValue(parentId, position / 6, position % 6,
+				Arrays.copyOf(diceValues, diceValues.length));
+		p.set(parentId, position / 6, position % 6, value);
+		tv.setText("" + value);
+		resetMove();
 	}
 
 	// set cells available for entry
@@ -213,14 +224,19 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 			if (p.isAvailable(id, i / 6, i % 6))
 				gv.getChildAt(i).findViewById(R.id.num)
 						.setBackgroundResource(R.color.lighter_blue);
+			else {
+				gv.getChildAt(i).findViewById(R.id.num)
+						.setBackgroundResource(R.color.invalid_blue);
+			}
 	}
 
 	// prepare dice for next move, called when value is entered
 	private void resetMove() {
-		move = 0;
+		p.incMove();
 
 		for (int i = 0; i < 6; i++) {
 			selectedDice[i] = false;
+			lockedDice[i] = false;
 			ImageView iv = (ImageView) findViewById(diceSlotId(i));
 			iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
 		}
@@ -327,14 +343,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 				ImageView iv = (ImageView) findViewById(diceSlotId(i));
 				iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
 			} else {
-				// lock die so it's selection cannot be changed in the next move
+				// if die is selected, lock it so it's selection cannot be
+				// changed in the next move
 				lockedDice[i] = true;
 			}
 		}
 	}
 
 	public void shakingStarted() {
-		if (move == 3)
+		if (p.getRoll() == 3)
 			return;
 
 		if (mp == null || !mp.isPlaying()) {
@@ -346,7 +363,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 	}
 
 	public void shakingStopped() {
-		if (move == 3)
+		if (p.getRoll() == 3)
 			return;
 
 		if (mp != null) {
@@ -355,6 +372,21 @@ public class GameplayActivity extends Activity implements Shaker.Callback {
 
 		mp = MediaPlayer.create(getApplicationContext(), R.raw.roll);
 		mp.start();
-		move++;
+		p.incRoll();
+		updateInfo();
+	}
+
+	// update info about move, roll and player on the top of the screen
+	public void updateInfo() {
+		tvMove.setText("move: " + p.getMove());
+		tvRoll.setText("roll" + p.getRoll() + "/3");
+	}
+
+	@Override
+	public void resetAvailability() {
+		resetAvailavility(R.id.num_board_grid);
+		resetAvailavility(R.id.min_max_grid);
+		resetAvailavility(R.id.spec_grid);
+		updateInfo();
 	}
 }
