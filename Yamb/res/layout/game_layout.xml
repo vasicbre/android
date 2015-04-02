@@ -315,6 +315,7 @@
                     android:stretchMode="columnWidth" />
 
                 <TextView
+                    android:id="@+id/total_score"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="2dp"

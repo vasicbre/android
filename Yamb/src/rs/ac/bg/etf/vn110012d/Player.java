@@ -29,7 +29,7 @@ public class Player {
 
 	// cell unavailable because roll isn't made yet
 	public static final int RUNAVAILABLE = -2;
-	// cell unavailabe because of ordering, move or else...
+	// cell unavailable because of ordering, move or else...
 	public static final int UNAVAILABLE = 0;
 	public static final int AVAILABLE = 1;
 
@@ -55,9 +55,9 @@ public class Player {
 	private int[][] availabilityMatrix = new int[BOARD_HEIGHT][BOARD_WIDTH];
 
 	// sums
-	private int[] numSum = new int[6];
-	private int[] minMaxSum = new int[6];
-	private int[] specSum = new int[6];
+	private int[] numberSum = new int[6];
+	private int[] extremeSum = new int[6];
+	private int[] specialSum = new int[6];
 
 	private int move, roll;
 
@@ -79,19 +79,19 @@ public class Player {
 		// unlock available cells after first roll
 		if (roll == 1) {
 			rollUnlock();
-			cb.resetAvailability();
+			cb.refreshView();
 		} else if (roll == 2) {
 			handLock();
 			if (!callLocked)
 				callLock();
-			cb.resetAvailability();
+			cb.refreshView();
 		}
 	}
 
 	public void resetRoll() {
 		roll = 0;
 		rollLock();
-		cb.resetAvailability();
+		cb.refreshView();
 	}
 
 	public int getRoll() {
@@ -108,7 +108,7 @@ public class Player {
 	}
 
 	public interface Callback {
-		void resetAvailability();
+		void refreshView();
 
 		void enterValue(View view, int position, int parentId);
 	}
@@ -131,7 +131,7 @@ public class Player {
 					availabilityMatrix[row][col] = RUNAVAILABLE;
 			}
 			availabilityMatrix[base + position / BOARD_WIDTH][CALL] = AVAILABLE;
-			cb.resetAvailability();
+			cb.refreshView();
 		}
 	}
 
@@ -214,8 +214,30 @@ public class Player {
 
 		board[base + row][col] = value;
 
-		cb.resetAvailability();
+		switch (base) {
+		case NUMBERS:
+			numberSum[col] += value;
+			// fall through to update extreme values
+		case EXTREMES:
+			extremeSum[col] = (board[MAX][col] - board[MIN][col])
+					* board[0][col] > 0 ? (board[MAX][col] - board[MIN][col])
+					* board[0][col] : 0;
+			break;
+		case SPECIALS:
+			specialSum[col] += value;
+			break;
+		}
 
+		cb.refreshView();
+
+	}
+
+	public int getTotalScore() {
+		int totalScore = 0;
+		for (int i = 0; i < BOARD_WIDTH; i++)
+			totalScore += numberSum[i] + extremeSum[i] + specialSum[i];
+
+		return totalScore;
 	}
 
 	// set next cell available for entry in case of ordered columns
@@ -317,6 +339,7 @@ public class Player {
 		}
 	}
 
+	// calculates value of full hand
 	private int fullValue(int[] diceValues) {
 		List<Integer> doubleRep = new ArrayList<Integer>();
 		List<Integer> tripleRep = new ArrayList<Integer>();
@@ -389,7 +412,21 @@ public class Player {
 
 	}
 
-	public void swap(int[] array, int pos1, int pos2) {
+	public int getSumValue(int id, int col) {
+		int base = getRowBase(id);
+		switch (id) {
+		case R.id.num_sum:
+			return numberSum[col];
+		case R.id.min_max_sum:
+			return extremeSum[col];
+		case R.id.spec_sum:
+			return specialSum[col];
+		default:
+			return 0;
+		}
+	}
+
+	private void swap(int[] array, int pos1, int pos2) {
 		int temp = array[pos1];
 		array[pos1] = array[pos2];
 		array[pos2] = temp;

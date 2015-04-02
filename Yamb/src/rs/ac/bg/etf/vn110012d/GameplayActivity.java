@@ -217,19 +217,6 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		resetMove();
 	}
 
-	// set cells available for entry
-	private void resetAvailavility(int id) {
-		GridView gv = (GridView) findViewById(id);
-		for (int i = 0; i < gv.getChildCount(); i++)
-			if (p.isAvailable(id, i / 6, i % 6))
-				gv.getChildAt(i).findViewById(R.id.num)
-						.setBackgroundResource(R.color.lighter_blue);
-			else {
-				gv.getChildAt(i).findViewById(R.id.num)
-						.setBackgroundResource(R.color.invalid_blue);
-			}
-	}
-
 	// prepare dice for next move, called when value is entered
 	private void resetMove() {
 		p.incMove();
@@ -326,7 +313,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 				convertView = inflater
 						.inflate(R.layout.sum_cell, parent, false);
 			}
-			TextView tv = (TextView) convertView.findViewById(R.id.num);
+			TextView tv = (TextView) convertView.findViewById(R.id.sum_value);
 			String s = strlist.get(position);
 
 			tv.setText(s);
@@ -379,14 +366,46 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	// update info about move, roll and player on the top of the screen
 	public void updateInfo() {
 		tvMove.setText("move: " + p.getMove());
-		tvRoll.setText("roll" + p.getRoll() + "/3");
+		tvRoll.setText("roll: " + p.getRoll() + "/3");
+	}
+
+	// set cells available for entry
+	private void refreshView(int id) {
+		GridView gv = (GridView) findViewById(id);
+		for (int i = 0; i < gv.getChildCount(); i++)
+			if (p.isAvailable(id, i / 6, i % 6))
+				gv.getChildAt(i).findViewById(R.id.num)
+						.setBackgroundResource(R.color.lighter_blue);
+			else {
+				gv.getChildAt(i).findViewById(R.id.num)
+						.setBackgroundResource(R.color.invalid_blue);
+			}
+	}
+
+	private void refreshSums(int id) {
+		GridView gv = (GridView) findViewById(id);
+		for (int i = 0; i < gv.getChildCount(); i++) {
+			int value = p.getSumValue(id, i);
+			if (value != 0)
+				((TextView) gv.getChildAt(i).findViewById(R.id.sum_value)).setText(""
+						+ value);
+		}
+	}
+
+	public void refreshTotalScore() {
+		TextView tv = (TextView) findViewById(R.id.total_score);
+		tv.setText("total score: " + p.getTotalScore());
 	}
 
 	@Override
-	public void resetAvailability() {
-		resetAvailavility(R.id.num_board_grid);
-		resetAvailavility(R.id.min_max_grid);
-		resetAvailavility(R.id.spec_grid);
+	public void refreshView() {
+		refreshView(R.id.num_board_grid);
+		refreshView(R.id.min_max_grid);
+		refreshView(R.id.spec_grid);
+		refreshSums(R.id.num_sum);
+		refreshSums(R.id.min_max_sum);
+		refreshSums(R.id.spec_sum);
+		refreshTotalScore();
 		updateInfo();
 	}
 }
