@@ -4,8 +4,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import rs.ac.bg.etf.vn110012d.MainActivity.MyAdapter;
+
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -16,8 +20,10 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class GameplayActivity extends Activity implements Shaker.Callback,
@@ -26,6 +32,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	int[] diceValues;
 	boolean[] selectedDice;
 	boolean[] lockedDice;
+	boolean lockBoard;
 
 	private static final int SHAKE_THRESHOLD = 400;
 	private static final int END_SHAKE_TIME_GAP = 600;
@@ -48,7 +55,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		players = new Player[playerCnt];
 
 		for (int i = 0; i < playerCnt; i++) {
-			players[i] = new Player(this, i, getIntent().getExtras().getString("PLAYER_" + i));
+			players[i] = new Player(this, i, getIntent().getExtras().getString(
+					"PLAYER_" + i));
 		}
 
 		tvMove = (TextView) findViewById(R.id.move_id);
@@ -74,7 +82,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		super.onResume();
 		shaker.register();
 	}
-	
+
 	private void populateBoard() {
 		populateInputCells(R.id.num_board_grid, 36);
 		populateInputCells(R.id.min_max_grid, 12);
@@ -215,18 +223,18 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 					int position, long id) {
 
 				if (currentPlayer.isAvailable(parent.getId(), position / 6,
-						position % 6)) {
+						position % 6) && !lockBoard) {
 					if (currentPlayer.isCall(parent.getId(), position % 6)) {
-						if(currentPlayer.isCallMade()) {
+						if (currentPlayer.isCallMade()) {
 							parent.postDelayed(GameplayActivity.this, 2000);
 						}
 						currentPlayer.call(view, position, parent.getId());
 					} else {
 						enterValue(view, position, parent.getId());
 						parent.postDelayed(GameplayActivity.this, 2000);
+						lockBoard = true;
 					}
 				}
-
 			}
 		});
 	}
@@ -241,13 +249,46 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		refreshView();
 	}
 
+	void nextMovePrompt() {
+		int nextId = (currentPlayer.getId() + 1) % playerCnt;
+		final Dialog dialog = new Dialog(this);
+		dialog.setTitle(players[nextId].getName() + "is on the move");
+		dialog.setContentView(R.layout.next_move_dialog);
+
+		TextView tv = (TextView) dialog.findViewById(R.id.tv_question);
+
+		tv.setText(players[nextId].getName() + ", are you ready to roll?");
+
+		final Button yes = (Button) dialog.findViewById(R.id.yes_button);
+
+		yes.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				dialog.dismiss();
+				nextMove();
+			}
+		});
+
+		dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+			@Override
+			public void onCancel(DialogInterface dialog) {
+				// TODO Auto-generated method stub
+				nextMovePrompt();
+			}
+		});
+
+		dialog.show();
+	}
+
 	// prepare dice for next move, called when value is entered
 	private void nextMove() {
-
+		int nextId = (currentPlayer.getId() + 1) % playerCnt;
+		lockBoard = false;
 		currentPlayer.incMove();
 		updateInfo();
 
-		int nextId = (currentPlayer.getId() + 1) % playerCnt;
 		currentPlayer = players[nextId];
 
 		for (int i = 0; i < 6; i++) {
@@ -454,10 +495,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(2000);
+			Thread.sleep(1500);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		nextMove();
+		nextMovePrompt();
 	}
 }
