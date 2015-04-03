@@ -83,16 +83,33 @@ public class MainActivity extends Activity implements
 		myAdapter = new MyAdapter(playerCnt);
 		myList.setAdapter(myAdapter);
 
-		Button start = (Button) dialog.findViewById(R.id.start_button);
+		final Button start = (Button) dialog.findViewById(R.id.start_button);
 		Button close = (Button) dialog.findViewById(R.id.close_button);
 
 		start.setOnClickListener(new View.OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
+				
+				
+				start.requestFocus();
+				
+			}
+		});
+		
+		start.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+			
+			@Override
+			public void onFocusChange(View v, boolean hasFocus) {
 				Intent intent = new Intent(getApplicationContext(),
 						GameplayActivity.class);
 				intent.putExtra("NUMBER_OF_PLAYERS", playerCnt);
+				
+				for(int i = 0; i < playerCnt; i++) {
+					intent.putExtra("PLAYER_" + i, (String)myAdapter.getItem(i));
+				}
+				
+				dialog.dismiss();
 				startActivity(intent);
 			}
 		});
@@ -165,7 +182,7 @@ public class MainActivity extends Activity implements
 		}
 
 		public Object getItem(int position) {
-			return position;
+			return myItems.get(position).caption;
 		}
 
 		public long getItemId(int position) {

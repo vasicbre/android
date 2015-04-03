@@ -67,9 +67,12 @@ public class Player {
 
 	boolean callLocked = false;
 
-	public Player(Player.Callback cb, int playerId) {
+	String name;
+
+	public Player(Player.Callback cb, int playerId, String name) {
 		this.cb = cb;
 		this.playerId = playerId;
+		this.name = name;
 
 		initBoard();
 		initSums();
@@ -77,6 +80,10 @@ public class Player {
 
 		// lock all cells before first roll
 		rollLock();
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	private void initBoard() {
@@ -252,12 +259,11 @@ public class Player {
 			if (row != 0)
 				break;
 		case EXTREMES:
-			if (extremeSum[col] == EMPTY)
-				extremeSum[col] = 0;
-
-			extremeSum[col] = (board[MAX][col] - board[MIN][col])
-					* board[0][col] > 0 ? (board[MAX][col] - board[MIN][col])
-					* board[0][col] : 0;
+			// required for calculating sum are fields: ones, max, min
+			if (board[0][col] != EMPTY && board[MAX][col] != EMPTY
+					&& board[MIN][col] != EMPTY)
+				extremeSum[col] = (board[MAX][col] - board[MIN][col])
+						* board[0][col];
 			break;
 		case SPECIALS:
 

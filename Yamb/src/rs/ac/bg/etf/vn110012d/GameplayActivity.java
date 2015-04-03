@@ -19,7 +19,6 @@ import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class GameplayActivity extends Activity implements Shaker.Callback,
 		Player.Callback, Runnable {
@@ -49,7 +48,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		players = new Player[playerCnt];
 
 		for (int i = 0; i < playerCnt; i++) {
-			players[i] = new Player(this, i);
+			players[i] = new Player(this, i, getIntent().getExtras().getString("PLAYER_" + i));
 		}
 
 		tvMove = (TextView) findViewById(R.id.move_id);
@@ -58,13 +57,9 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 		currentPlayer = players[0];
 
-		populateInputCells(R.id.num_board_grid, 36);
-		populateInputCells(R.id.min_max_grid, 12);
-		populateInputCells(R.id.spec_grid, 30);
-		populateScoreCells(R.id.num_sum);
-		populateScoreCells(R.id.min_max_sum);
-		populateScoreCells(R.id.spec_sum);
+		populateBoard();
 		loadDice();
+		updateInfo();
 
 		shaker = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
 		shaker.register();
@@ -78,6 +73,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	protected void onResume() {
 		super.onResume();
 		shaker.register();
+	}
+	
+	private void populateBoard() {
+		populateInputCells(R.id.num_board_grid, 36);
+		populateInputCells(R.id.min_max_grid, 12);
+		populateInputCells(R.id.spec_grid, 30);
+		populateScoreCells(R.id.num_sum);
+		populateScoreCells(R.id.min_max_sum);
+		populateScoreCells(R.id.spec_sum);
 	}
 
 	private void loadDice() {
@@ -394,7 +398,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	public void updateInfo() {
 		tvMove.setText("move: " + currentPlayer.getMove());
 		tvRoll.setText("roll: " + currentPlayer.getRoll() + "/3");
-		tvPlayer.setText("player " + currentPlayer.getId());
+		tvPlayer.setText(currentPlayer.getName());
 
 	}
 

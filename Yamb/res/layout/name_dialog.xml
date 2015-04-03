@@ -70,7 +70,9 @@
             android:layout_alignParentTop="true"
             android:layout_toLeftOf="@id/ViewColorPickerHelper"
             android:background="?android:attr/selectableItemBackground"
-            android:text="@string/start" />
+            android:text="@string/start"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
 
         <View
             android:id="@+id/ViewColorPickerHelper"
