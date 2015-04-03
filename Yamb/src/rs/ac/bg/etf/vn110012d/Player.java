@@ -33,6 +33,8 @@ public class Player {
 	public static final int UNAVAILABLE = 0;
 	public static final int AVAILABLE = 1;
 
+	public static final int EMPTY = -1;
+
 	public static final int BOARD_HEIGHT = 13;
 	public static final int BOARD_WIDTH = 6;
 
@@ -59,18 +61,35 @@ public class Player {
 	private int[] extremeSum = new int[6];
 	private int[] specialSum = new int[6];
 
-	private int move, roll;
+	private int move, roll, playerId;
 
 	private Player.Callback cb;
 
 	boolean callLocked = false;
 
-	public Player(Player.Callback cb) {
+	public Player(Player.Callback cb, int playerId) {
 		this.cb = cb;
+		this.playerId = playerId;
+
+		initBoard();
+		initSums();
 		initAvailability();
 
 		// lock all cells before first roll
 		rollLock();
+	}
+
+	private void initBoard() {
+		for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++)
+			board[i / BOARD_WIDTH][i % BOARD_WIDTH] = EMPTY;
+	}
+
+	private void initSums() {
+		for (int i = 0; i < BOARD_WIDTH; i++) {
+			numberSum[i] = EMPTY;
+			extremeSum[i] = EMPTY;
+			specialSum[i] = EMPTY;
+		}
 	}
 
 	public void incRoll() {
@@ -107,6 +126,10 @@ public class Player {
 		resetRoll();
 	}
 
+	public int getId() {
+		return playerId;
+	}
+
 	public interface Callback {
 		void refreshView();
 
@@ -133,6 +156,10 @@ public class Player {
 			availabilityMatrix[base + position / BOARD_WIDTH][CALL] = AVAILABLE;
 			cb.refreshView();
 		}
+	}
+
+	public boolean isCallMade() {
+		return callLocked;
 	}
 
 	private void initAvailability() {
@@ -216,14 +243,27 @@ public class Player {
 
 		switch (base) {
 		case NUMBERS:
+
+			if (numberSum[col] == EMPTY)
+				numberSum[col] = 0;
+
 			numberSum[col] += value;
-			// fall through to update extreme values
+			// fall through to update extreme values if ones are entered
+			if (row != 0)
+				break;
 		case EXTREMES:
+			if (extremeSum[col] == EMPTY)
+				extremeSum[col] = 0;
+
 			extremeSum[col] = (board[MAX][col] - board[MIN][col])
 					* board[0][col] > 0 ? (board[MAX][col] - board[MIN][col])
 					* board[0][col] : 0;
 			break;
 		case SPECIALS:
+
+			if (specialSum[col] == EMPTY)
+				specialSum[col] = 0;
+
 			specialSum[col] += value;
 			break;
 		}
@@ -234,8 +274,11 @@ public class Player {
 
 	public int getTotalScore() {
 		int totalScore = 0;
-		for (int i = 0; i < BOARD_WIDTH; i++)
-			totalScore += numberSum[i] + extremeSum[i] + specialSum[i];
+		for (int i = 0; i < BOARD_WIDTH; i++) {
+			totalScore += (numberSum[i] != EMPTY ? numberSum[i] : 0)
+					+ (extremeSum[i] != EMPTY ? extremeSum[i] : 0)
+					+ (specialSum[i] != EMPTY ? specialSum[i] : 0);
+		}
 
 		return totalScore;
 	}
@@ -370,7 +413,8 @@ public class Player {
 
 		switch (row) {
 		case TRILING: {
-			return repeating(diceValues, 3) * 3 + TRILING_BONUS;
+			value = repeating(diceValues, 3) * 3;
+			return value > 0 ? value + TRILING_BONUS : 0;
 		}
 		case STRAIGHT: {
 			if (straightCheck(diceValues))
@@ -379,13 +423,16 @@ public class Player {
 				return 0;
 		}
 		case FULL: {
-			return fullValue(diceValues) + FULL_BONUS;
+			value = fullValue(diceValues);
+			return value > 0 ? value + FULL_BONUS : 0;
 		}
 		case POKER: {
-			return repeating(diceValues, 4) * 4 + POKER_BONUS;
+			value = repeating(diceValues, 4) * 4;
+			return value > 0 ? value + POKER_BONUS : 0;
 		}
 		case YAMB: {
-			return repeating(diceValues, 5) * 5 + YAMB_BONUS;
+			value = repeating(diceValues, 5) * 5;
+			return value > 0 ? value + YAMB_BONUS : 0;
 		}
 		}
 		return value;
@@ -424,6 +471,11 @@ public class Player {
 		default:
 			return 0;
 		}
+	}
+
+	public int getValue(int id, int row, int col) {
+		int base = getRowBase(id);
+		return board[base + row][col];
 	}
 
 	private void swap(int[] array, int pos1, int pos2) {

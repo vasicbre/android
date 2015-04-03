@@ -1,20 +1,38 @@
 package rs.ac.bg.etf.vn110012d;
 
+import java.util.ArrayList;
+
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.NumberPicker;
 
 public class MainActivity extends Activity implements
 		NumberPicker.OnValueChangeListener {
 
+	public static final int MAX_PLAYERS = 5;
+
 	Button newgame, settings, history, resume;
 	static Dialog dialog;
+
+	int playerCnt;
+
+	private ListView myList;
+	private MyAdapter myAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +73,40 @@ public class MainActivity extends Activity implements
 		return super.onOptionsItemSelected(item);
 	}
 
+	public void showNameDialog() {
+		final Dialog dialog = new Dialog(MainActivity.this);
+		dialog.setTitle("Enter names");
+		dialog.setContentView(R.layout.name_dialog);
+
+		myList = (ListView) dialog.findViewById(R.id.list_view);
+		myList.setItemsCanFocus(true);
+		myAdapter = new MyAdapter(playerCnt);
+		myList.setAdapter(myAdapter);
+
+		Button start = (Button) dialog.findViewById(R.id.start_button);
+		Button close = (Button) dialog.findViewById(R.id.close_button);
+
+		start.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				Intent intent = new Intent(getApplicationContext(),
+						GameplayActivity.class);
+				intent.putExtra("NUMBER_OF_PLAYERS", playerCnt);
+				startActivity(intent);
+			}
+		});
+
+		close.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				dialog.dismiss();
+			}
+		});
+
+		dialog.show();
+	}
+
 	public void showDialog() {
 		final Dialog dialog = new Dialog(MainActivity.this);
 		dialog.setTitle("Set number of players");
@@ -67,14 +119,18 @@ public class MainActivity extends Activity implements
 		np.setMinValue(1);
 		np.setWrapSelectorWheel(false);
 		np.setOnValueChangedListener(this);
+
 		play.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				Intent intent = new Intent(getApplicationContext(),
-						GameplayActivity.class);
-				startActivity(intent);
+				playerCnt = np.getValue();
+
+				dialog.dismiss();
+				showNameDialog();
+
 			}
 		});
+
 		cancel.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
@@ -87,7 +143,71 @@ public class MainActivity extends Activity implements
 
 	@Override
 	public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-		// TODO Auto-generated method stub
 
+	}
+
+	public class MyAdapter extends BaseAdapter {
+		private LayoutInflater mInflater;
+		public ArrayList<ListItem> myItems = new ArrayList<ListItem>();
+
+		public MyAdapter(int n) {
+			mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+			for (int i = 0; i < n; i++) {
+				ListItem listItem = new ListItem();
+				listItem.caption = "Player " + (i + 1);
+				myItems.add(listItem);
+			}
+			notifyDataSetChanged();
+		}
+
+		public int getCount() {
+			return myItems.size();
+		}
+
+		public Object getItem(int position) {
+			return position;
+		}
+
+		public long getItemId(int position) {
+			return position;
+		}
+
+		public View getView(int position, View convertView, ViewGroup parent) {
+			ViewHolder holder;
+			if (convertView == null) {
+				holder = new ViewHolder();
+				convertView = mInflater.inflate(R.layout.name, null);
+				holder.caption = (EditText) convertView.findViewById(R.id.name);
+				convertView.setTag(holder);
+			} else {
+				holder = (ViewHolder) convertView.getTag();
+			}
+			// Fill EditText with the value you have in data source
+			holder.caption.setText(myItems.get(position).caption);
+			holder.caption.setId(position);
+
+			// we need to update adapter once we finish with editing
+			holder.caption
+					.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+						public void onFocusChange(View v, boolean hasFocus) {
+							if (!hasFocus) {
+								final int position = v.getId();
+								final EditText Caption = (EditText) v;
+								myItems.get(position).caption = Caption
+										.getText().toString();
+							}
+						}
+					});
+
+			return convertView;
+		}
+	}
+
+	class ViewHolder {
+		EditText caption;
+	}
+
+	class ListItem {
+		String caption;
 	}
 }

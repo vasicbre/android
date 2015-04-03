@@ -22,7 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class GameplayActivity extends Activity implements Shaker.Callback,
-		Player.Callback {
+		Player.Callback, Runnable {
 
 	int[] diceValues;
 	boolean[] selectedDice;
@@ -32,20 +32,31 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	private static final int END_SHAKE_TIME_GAP = 600;
 
 	private MediaPlayer mp;
-	Shaker s;
-	Player p;
+	Shaker shaker;
+	Player currentPlayer;
 
-	TextView tvMove, tvRoll;
+	Player[] players;
+	int playerCnt;
+
+	TextView tvMove, tvRoll, tvPlayer;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.game_layout);
 
+		playerCnt = getIntent().getExtras().getInt("NUMBER_OF_PLAYERS");
+		players = new Player[playerCnt];
+
+		for (int i = 0; i < playerCnt; i++) {
+			players[i] = new Player(this, i);
+		}
+
 		tvMove = (TextView) findViewById(R.id.move_id);
 		tvRoll = (TextView) findViewById(R.id.roll_id);
+		tvPlayer = (TextView) findViewById(R.id.player_id);
 
-		p = new Player(this);
+		currentPlayer = players[0];
 
 		populateInputCells(R.id.num_board_grid, 36);
 		populateInputCells(R.id.min_max_grid, 12);
@@ -55,18 +66,18 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		populateScoreCells(R.id.spec_sum);
 		loadDice();
 
-		s = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
-		s.register();
+		shaker = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
+		shaker.register();
 	}
 
 	protected void onPause() {
 		super.onPause();
-		s.unregister();
+		shaker.unregister();
 	}
 
 	protected void onResume() {
 		super.onResume();
-		s.register();
+		shaker.register();
 	}
 
 	private void loadDice() {
@@ -117,7 +128,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	private void selectDice(ImageView iv, int ord) {
 		// change selection is available only for dice that are not selected in
 		// previous moves after the first move
-		if (p.getRoll() > 0 && !lockedDice[ord]) {
+		if (currentPlayer.getRoll() > 0 && !lockedDice[ord]) {
 			selectedDice[ord] = !selectedDice[ord];
 			iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
 		}
@@ -179,6 +190,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		}
 	}
 
+	boolean endOfMove = false;
+
 	private void populateInputCells(int id, int cnt) {
 		GridView num_grid = (GridView) findViewById(id);
 
@@ -186,7 +199,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		for (int i = 0; i < cnt; i++)
 			strs.add("");
 
-		ArrayAdapter<String> adapter = new InputCellAdapter(strs, this, p);
+		ArrayAdapter<String> adapter = new InputCellAdapter(strs, this,
+				currentPlayer);
 
 		num_grid.setAdapter(adapter);
 
@@ -196,13 +210,19 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 
-				if (p.isAvailable(parent.getId(), position / 6, position % 6)) {
-					if (p.isCall(parent.getId(), position % 6)) {
-						p.call(view, position, parent.getId());
+				if (currentPlayer.isAvailable(parent.getId(), position / 6,
+						position % 6)) {
+					if (currentPlayer.isCall(parent.getId(), position % 6)) {
+						if(currentPlayer.isCallMade()) {
+							parent.postDelayed(GameplayActivity.this, 2000);
+						}
+						currentPlayer.call(view, position, parent.getId());
 					} else {
 						enterValue(view, position, parent.getId());
+						parent.postDelayed(GameplayActivity.this, 2000);
 					}
 				}
+
 			}
 		});
 	}
@@ -210,16 +230,21 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	public void enterValue(View view, int position, int parentId) {
 		TextView tv = (TextView) view.findViewById(R.id.num);
 		tv.setBackgroundResource(R.color.invalid_blue);
-		int value = p.calculateValue(parentId, position / 6, position % 6,
-				Arrays.copyOf(diceValues, diceValues.length));
-		p.set(parentId, position / 6, position % 6, value);
+		int value = currentPlayer.calculateValue(parentId, position / 6,
+				position % 6, Arrays.copyOf(diceValues, diceValues.length));
+		currentPlayer.set(parentId, position / 6, position % 6, value);
 		tv.setText("" + value);
-		resetMove();
+		refreshView();
 	}
 
 	// prepare dice for next move, called when value is entered
-	private void resetMove() {
-		p.incMove();
+	private void nextMove() {
+
+		currentPlayer.incMove();
+		updateInfo();
+
+		int nextId = (currentPlayer.getId() + 1) % playerCnt;
+		currentPlayer = players[nextId];
 
 		for (int i = 0; i < 6; i++) {
 			selectedDice[i] = false;
@@ -227,6 +252,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 			ImageView iv = (ImageView) findViewById(diceSlotId(i));
 			iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
 		}
+
+		refreshView();
 	}
 
 	private void populateScoreCells(int id) {
@@ -338,7 +365,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	}
 
 	public void shakingStarted() {
-		if (p.getRoll() == 3)
+		if (currentPlayer.getRoll() == 3)
 			return;
 
 		if (mp == null || !mp.isPlaying()) {
@@ -350,7 +377,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	}
 
 	public void shakingStopped() {
-		if (p.getRoll() == 3)
+		if (currentPlayer.getRoll() == 3)
 			return;
 
 		if (mp != null) {
@@ -359,42 +386,53 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 		mp = MediaPlayer.create(getApplicationContext(), R.raw.roll);
 		mp.start();
-		p.incRoll();
+		currentPlayer.incRoll();
 		updateInfo();
 	}
 
 	// update info about move, roll and player on the top of the screen
 	public void updateInfo() {
-		tvMove.setText("move: " + p.getMove());
-		tvRoll.setText("roll: " + p.getRoll() + "/3");
+		tvMove.setText("move: " + currentPlayer.getMove());
+		tvRoll.setText("roll: " + currentPlayer.getRoll() + "/3");
+		tvPlayer.setText("player " + currentPlayer.getId());
+
 	}
 
 	// set cells available for entry
 	private void refreshView(int id) {
 		GridView gv = (GridView) findViewById(id);
-		for (int i = 0; i < gv.getChildCount(); i++)
-			if (p.isAvailable(id, i / 6, i % 6))
-				gv.getChildAt(i).findViewById(R.id.num)
-						.setBackgroundResource(R.color.lighter_blue);
-			else {
-				gv.getChildAt(i).findViewById(R.id.num)
-						.setBackgroundResource(R.color.invalid_blue);
+		for (int i = 0; i < gv.getChildCount(); i++) {
+			TextView tv = (TextView) gv.getChildAt(i).findViewById(R.id.num);
+			if (currentPlayer.isAvailable(id, i / 6, i % 6)) {
+				tv.setBackgroundResource(R.color.lighter_blue);
+			} else {
+				tv.setBackgroundResource(R.color.invalid_blue);
 			}
+
+			int value = currentPlayer.getValue(id, i / 6, i % 6);
+			if (value != Player.EMPTY)
+				tv.setText("" + value);
+			else
+				tv.setText("");
+		}
 	}
 
 	private void refreshSums(int id) {
 		GridView gv = (GridView) findViewById(id);
 		for (int i = 0; i < gv.getChildCount(); i++) {
-			int value = p.getSumValue(id, i);
-			if (value != 0)
-				((TextView) gv.getChildAt(i).findViewById(R.id.sum_value)).setText(""
-						+ value);
+			int value = currentPlayer.getSumValue(id, i);
+			TextView tv = (TextView) gv.getChildAt(i).findViewById(
+					R.id.sum_value);
+			if (value != Player.EMPTY)
+				tv.setText("" + value);
+			else
+				tv.setText("");
 		}
 	}
 
 	public void refreshTotalScore() {
 		TextView tv = (TextView) findViewById(R.id.total_score);
-		tv.setText("total score: " + p.getTotalScore());
+		tv.setText("total score: " + currentPlayer.getTotalScore());
 	}
 
 	@Override
@@ -407,5 +445,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		refreshSums(R.id.spec_sum);
 		refreshTotalScore();
 		updateInfo();
+	}
+
+	@Override
+	public void run() {
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		nextMove();
 	}
 }
