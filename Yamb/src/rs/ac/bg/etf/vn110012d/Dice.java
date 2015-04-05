@@ -76,15 +76,15 @@ public class Dice {
 		return value;
 	}
 
-	// returns highest 3-times-repeating character
-	private int repeating(int[] diceValues, int requiredCnt) {
+	// returns highest n-times-repeating character
+	private int repeating(int n) {
 		int prev = 0;
 		int repCnt = 1;
 		int repValue = 0;
 		for (int i = 1; i < diceValues.length; i++) {
 			if (diceValues[i] == diceValues[prev]) {
 				repCnt++;
-				if (repCnt == requiredCnt)
+				if (repCnt == n)
 					repValue = diceValues[i];
 			} else
 				prev = i;
@@ -93,7 +93,7 @@ public class Dice {
 		return repValue;
 	}
 
-	private boolean straightCheck(int[] diceValues) {
+	private boolean straightCheck() {
 		Set<Integer> set = new HashSet<Integer>();
 		for (int i = 0; i < diceValues.length; i++) {
 			set.add(diceValues[i]);
@@ -103,8 +103,7 @@ public class Dice {
 	}
 
 	// returns double and triple repeating sequences
-	private void findRepeatingSequences(int[] diceValues,
-			List<Integer> doubleRep, List<Integer> tripleRep) {
+	private void findRepeatingSequences(List<Integer> doubleRep, List<Integer> tripleRep) {
 		int prev = 0;
 		int repCnt = 1;
 		for (int i = 1; i < diceValues.length; i++) {
@@ -122,10 +121,10 @@ public class Dice {
 	}
 
 	// calculates value of full hand
-	private int fullValue(int[] diceValues) {
+	private int fullValue() {
 		List<Integer> doubleRep = new ArrayList<Integer>();
 		List<Integer> tripleRep = new ArrayList<Integer>();
-		findRepeatingSequences(diceValues, doubleRep, tripleRep);
+		findRepeatingSequences(doubleRep, tripleRep);
 
 		int tripleValue = 0;
 		int doubleValue = 0;
@@ -153,25 +152,25 @@ public class Dice {
 
 		switch (row) {
 		case Player.TRILING: {
-			value = repeating(diceValues, 3) * 3;
+			value = repeating(3) * 3;
 			return value > 0 ? value + Player.TRILING_BONUS : 0;
 		}
 		case Player.STRAIGHT: {
-			if (straightCheck(diceValues))
+			if (straightCheck())
 				return roll == 1 ? 66 : (roll == 2 ? 56 : 46);
 			else
 				return 0;
 		}
 		case Player.FULL: {
-			value = fullValue(diceValues);
+			value = fullValue();
 			return value > 0 ? value + Player.FULL_BONUS : 0;
 		}
 		case Player.POKER: {
-			value = repeating(diceValues, 4) * 4;
+			value = repeating(4) * 4;
 			return value > 0 ? value + Player.POKER_BONUS : 0;
 		}
 		case Player.YAMB: {
-			value = repeating(diceValues, 5) * 5;
+			value = repeating(5) * 5;
 			return value > 0 ? value + Player.YAMB_BONUS : 0;
 		}
 		}
