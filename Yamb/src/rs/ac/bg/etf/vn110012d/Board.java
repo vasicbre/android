@@ -1,16 +1,8 @@
 package rs.ac.bg.etf.vn110012d;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import android.view.View;
 
-public class Player {
+public class Board {
 
 	public static final int DOWN = 0;
 	public static final int FREE = 1;
@@ -63,18 +55,18 @@ public class Player {
 
 	private int move, roll, playerId;
 
-	private Player.Callback cb;
+	private Board.Callback cb;
 
 	boolean callLocked = false;
 
-	String name;
+	String playerName;
 
 	Dice dice;
 
-	public Player(Player.Callback cb, int playerId, String name, Dice dice) {
+	public Board(Board.Callback cb, int playerId, String playerName, Dice dice) {
 		this.cb = cb;
 		this.playerId = playerId;
-		this.name = name;
+		this.playerName = playerName;
 		this.dice = dice;
 
 		initBoard();
@@ -86,7 +78,7 @@ public class Player {
 	}
 
 	public String getName() {
-		return name;
+		return playerName;
 	}
 
 	private void initBoard() {
