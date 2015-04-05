@@ -66,7 +66,7 @@ public class Dice {
 		Arrays.sort(diceValues);
 
 		// if calculating max, reverse array
-		if (row == Player.MAX)
+		if (row == Board.MAX)
 			for (int i = 0; i < diceValues.length / 2; i++)
 				swap(diceValues, i, diceValues.length - i - 1);
 
@@ -151,27 +151,27 @@ public class Dice {
 		Arrays.sort(diceValues);
 
 		switch (row) {
-		case Player.TRILING: {
+		case Board.TRILING: {
 			value = repeating(3) * 3;
-			return value > 0 ? value + Player.TRILING_BONUS : 0;
+			return value > 0 ? value + Board.TRILING_BONUS : 0;
 		}
-		case Player.STRAIGHT: {
+		case Board.STRAIGHT: {
 			if (straightCheck())
 				return roll == 1 ? 66 : (roll == 2 ? 56 : 46);
 			else
 				return 0;
 		}
-		case Player.FULL: {
+		case Board.FULL: {
 			value = fullValue();
-			return value > 0 ? value + Player.FULL_BONUS : 0;
+			return value > 0 ? value + Board.FULL_BONUS : 0;
 		}
-		case Player.POKER: {
+		case Board.POKER: {
 			value = repeating(4) * 4;
-			return value > 0 ? value + Player.POKER_BONUS : 0;
+			return value > 0 ? value + Board.POKER_BONUS : 0;
 		}
-		case Player.YAMB: {
+		case Board.YAMB: {
 			value = repeating(5) * 5;
-			return value > 0 ? value + Player.YAMB_BONUS : 0;
+			return value > 0 ? value + Board.YAMB_BONUS : 0;
 		}
 		}
 		return value;

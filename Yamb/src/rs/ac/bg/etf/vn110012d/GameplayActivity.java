@@ -1,10 +1,7 @@
 package rs.ac.bg.etf.vn110012d;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-
-import rs.ac.bg.etf.vn110012d.MainActivity.EditTextAdapter;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -22,12 +19,10 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridView;
-import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 public class GameplayActivity extends Activity implements Shaker.Callback,
-		Player.Callback, Runnable {
+		Board.Callback, Runnable {
 
 	boolean lockBoard;
 
@@ -37,8 +32,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	private MediaPlayer mp;
 	Shaker shaker;
 
-	Player[] players;
-	Player currentPlayer;
+	Board[] playerBoards;
+	Board currentBoard;
 	Dice dice;
 
 	int playerCnt;
@@ -53,18 +48,18 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		dice = new Dice(this);
 
 		playerCnt = getIntent().getExtras().getInt("NUMBER_OF_PLAYERS");
-		players = new Player[playerCnt];
+		playerBoards = new Board[playerCnt];
 
 		for (int i = 0; i < playerCnt; i++) {
-			players[i] = new Player(this, i, getIntent().getExtras().getString(
-					"PLAYER_" + i), dice);
+			playerBoards[i] = new Board(this, i, getIntent().getExtras()
+					.getString("PLAYER_" + i), dice);
 		}
 
 		tvMove = (TextView) findViewById(R.id.move_id);
 		tvRoll = (TextView) findViewById(R.id.roll_id);
 		tvPlayer = (TextView) findViewById(R.id.player_id);
 
-		currentPlayer = players[0];
+		currentBoard = playerBoards[0];
 
 		populateBoard();
 		updateInfo();
@@ -83,8 +78,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		shaker.register();
 	}
 
-	public Player getCurrentPlayer() {
-		return currentPlayer;
+	public Board getCurrentPlayer() {
+		return currentBoard;
 	}
 
 	private void populateBoard() {
@@ -104,7 +99,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 			strs.add("");
 
 		ArrayAdapter<String> adapter = new InputCellAdapter(strs, this,
-				currentPlayer);
+				currentBoard);
 
 		numGrid.setAdapter(adapter);
 
@@ -114,18 +109,18 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 					int position, long id) {
 
 				// if field is available for entering value
-				if (currentPlayer.isAvailable(parent.getId(), position / 6,
+				if (currentBoard.isAvailable(parent.getId(), position / 6,
 						position % 6) && !lockBoard) {
-					
+
 					// if field is in call column
-					if (currentPlayer.isCall(parent.getId(), position % 6)) {
-						
+					if (currentBoard.isCall(parent.getId(), position % 6)) {
+
 						// if call is already made
-						if (currentPlayer.isCallMade()) {
+						if (currentBoard.isCallMade()) {
 							parent.postDelayed(GameplayActivity.this, 1000);
 						}
-						
-						currentPlayer.call(view, position, parent.getId());
+
+						currentBoard.call(view, position, parent.getId());
 					} else {
 						enterValue(view, position, parent.getId());
 						parent.postDelayed(GameplayActivity.this, 1000);
@@ -139,7 +134,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	public void enterValue(View view, int position, int parentId) {
 		TextView tv = (TextView) view.findViewById(R.id.num);
 		tv.setBackgroundResource(R.color.invalid_blue);
-		int value = currentPlayer.set(parentId, position / 6, position % 6);
+		int value = currentBoard.set(parentId, position / 6, position % 6);
 		tv.setText("" + value);
 		refreshView();
 	}
@@ -147,15 +142,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	// show dialog to ask player if ready to roll to avoid accidental shaking
 	// due to device passing
 	void nextMovePrompt() {
-		int nextId = (currentPlayer.getId() + 1) % playerCnt;
+		int nextId = (currentBoard.getId() + 1) % playerCnt;
 
 		final Dialog dialog = new Dialog(this);
-		dialog.setTitle(players[nextId].getName() + " is on the move");
+		dialog.setTitle(playerBoards[nextId].getName() + " is on the move");
 		dialog.setContentView(R.layout.next_move_dialog);
 
 		TextView tv = (TextView) dialog.findViewById(R.id.tv_question);
 
-		tv.setText(players[nextId].getName() + ", are you ready to roll?");
+		tv.setText(playerBoards[nextId].getName() + ", are you ready to roll?");
 
 		final Button yes = (Button) dialog.findViewById(R.id.yes_button);
 
@@ -172,7 +167,6 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 			@Override
 			public void onCancel(DialogInterface dialog) {
-				// TODO Auto-generated method stub
 				nextMovePrompt();
 			}
 		});
@@ -182,12 +176,12 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 	// prepare dice for next move, called when value is entered
 	private void nextMove() {
-		int nextId = (currentPlayer.getId() + 1) % playerCnt;
+		int nextId = (currentBoard.getId() + 1) % playerCnt;
 		lockBoard = false;
-		currentPlayer.incMove();
+		currentBoard.incMove();
 		updateInfo();
 
-		currentPlayer = players[nextId];
+		currentBoard = playerBoards[nextId];
 
 		dice.reset();
 
@@ -228,9 +222,9 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 		private List<String> strlist;
 		private Context context;
-		private Player p;
+		private Board p;
 
-		public InputCellAdapter(List<String> strlist, Context ctx, Player p) {
+		public InputCellAdapter(List<String> strlist, Context ctx, Board p) {
 			super(ctx, R.layout.grid_cell, strlist);
 			this.strlist = strlist;
 			this.context = ctx;
@@ -291,7 +285,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	}
 
 	public void shakingStarted() {
-		if (currentPlayer.getRoll() == 3)
+		if (currentBoard.getRoll() == 3)
 			return;
 
 		if (mp == null || !mp.isPlaying()) {
@@ -303,7 +297,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	}
 
 	public void shakingStopped() {
-		if (currentPlayer.getRoll() == 3)
+		if (currentBoard.getRoll() == 3)
 			return;
 
 		if (mp != null) {
@@ -312,15 +306,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 		mp = MediaPlayer.create(getApplicationContext(), R.raw.roll);
 		mp.start();
-		currentPlayer.incRoll();
+		currentBoard.incRoll();
 		updateInfo();
 	}
 
 	// update info about move, roll and player on the top of the screen
 	public void updateInfo() {
-		tvMove.setText("move: " + currentPlayer.getMove());
-		tvRoll.setText("roll: " + currentPlayer.getRoll() + "/3");
-		tvPlayer.setText(currentPlayer.getName());
+		tvMove.setText("move: " + currentBoard.getMove());
+		tvRoll.setText("roll: " + currentBoard.getRoll() + "/3");
+		tvPlayer.setText(currentBoard.getName());
 
 	}
 
@@ -329,14 +323,14 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		GridView gv = (GridView) findViewById(id);
 		for (int i = 0; i < gv.getChildCount(); i++) {
 			TextView tv = (TextView) gv.getChildAt(i).findViewById(R.id.num);
-			if (currentPlayer.isAvailable(id, i / 6, i % 6)) {
+			if (currentBoard.isAvailable(id, i / 6, i % 6)) {
 				tv.setBackgroundResource(R.color.lighter_blue);
 			} else {
 				tv.setBackgroundResource(R.color.invalid_blue);
 			}
 
-			int value = currentPlayer.getValue(id, i / 6, i % 6);
-			if (value != Player.EMPTY)
+			int value = currentBoard.getValue(id, i / 6, i % 6);
+			if (value != Board.EMPTY)
 				tv.setText("" + value);
 			else
 				tv.setText("");
@@ -346,10 +340,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	private void refreshSums(int id) {
 		GridView gv = (GridView) findViewById(id);
 		for (int i = 0; i < gv.getChildCount(); i++) {
-			int value = currentPlayer.getSumValue(id, i);
+			int value = currentBoard.getSumValue(id, i);
 			TextView tv = (TextView) gv.getChildAt(i).findViewById(
 					R.id.sum_value);
-			if (value != Player.EMPTY)
+			if (value != Board.EMPTY)
 				tv.setText("" + value);
 			else
 				tv.setText("");
@@ -358,7 +352,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 	public void refreshTotalScore() {
 		TextView tv = (TextView) findViewById(R.id.total_score);
-		tv.setText("total score: " + currentPlayer.getTotalScore());
+		tv.setText("total score: " + currentBoard.getTotalScore());
 	}
 
 	@Override
