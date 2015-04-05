@@ -27,12 +27,11 @@ public class MainActivity extends Activity implements
 	public static final int MAX_PLAYERS = 5;
 
 	Button newgame, settings, history, resume;
-	static Dialog dialog;
 
 	int playerCnt;
 
-	private ListView myList;
-	private MyAdapter myAdapter;
+	private ListView nameList;
+	private EditTextAdapter editTextAdapter;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -49,7 +48,7 @@ public class MainActivity extends Activity implements
 
 			@Override
 			public void onClick(View v) {
-				showDialog();
+				showNumberPicker();
 			}
 		});
 	}
@@ -78,37 +77,34 @@ public class MainActivity extends Activity implements
 		dialog.setTitle("Enter names");
 		dialog.setContentView(R.layout.name_dialog);
 
-		myList = (ListView) dialog.findViewById(R.id.list_view);
-		myList.setItemsCanFocus(true);
-		myAdapter = new MyAdapter(playerCnt);
-		myList.setAdapter(myAdapter);
+		nameList = (ListView) dialog.findViewById(R.id.list_view);
+		nameList.setItemsCanFocus(true);
+		editTextAdapter = new EditTextAdapter(playerCnt);
+		nameList.setAdapter(editTextAdapter);
 
 		final Button start = (Button) dialog.findViewById(R.id.start_button);
 		Button close = (Button) dialog.findViewById(R.id.close_button);
 
 		start.setOnClickListener(new View.OnClickListener() {
-
 			@Override
 			public void onClick(View v) {
-				
-				
+				// change focus so all values are collected from edit text list
 				start.requestFocus();
-				
 			}
 		});
-		
+
 		start.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-			
 			@Override
 			public void onFocusChange(View v, boolean hasFocus) {
 				Intent intent = new Intent(getApplicationContext(),
 						GameplayActivity.class);
 				intent.putExtra("NUMBER_OF_PLAYERS", playerCnt);
-				
-				for(int i = 0; i < playerCnt; i++) {
-					intent.putExtra("PLAYER_" + i, (String)myAdapter.getItem(i));
+
+				for (int i = 0; i < playerCnt; i++) {
+					intent.putExtra("PLAYER_" + i,
+							(String) editTextAdapter.getItem(i));
 				}
-				
+
 				dialog.dismiss();
 				startActivity(intent);
 			}
@@ -124,14 +120,17 @@ public class MainActivity extends Activity implements
 		dialog.show();
 	}
 
-	public void showDialog() {
+	public void showNumberPicker() {
 		final Dialog dialog = new Dialog(MainActivity.this);
 		dialog.setTitle("Set number of players");
 		dialog.setContentView(R.layout.dialog);
+
 		Button play = (Button) dialog.findViewById(R.id.play_button);
 		Button cancel = (Button) dialog.findViewById(R.id.cancel_button);
+
 		final NumberPicker np = (NumberPicker) dialog
 				.findViewById(R.id.number_picker);
+
 		np.setMaxValue(5);
 		np.setMinValue(1);
 		np.setWrapSelectorWheel(false);
@@ -140,11 +139,8 @@ public class MainActivity extends Activity implements
 		play.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				playerCnt = np.getValue();
-
 				dialog.dismiss();
 				showNameDialog();
-
 			}
 		});
 
@@ -154,21 +150,25 @@ public class MainActivity extends Activity implements
 				dialog.dismiss();
 			}
 		});
+
 		dialog.show();
 
 	}
 
 	@Override
 	public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-
+		playerCnt = newVal;
 	}
 
-	public class MyAdapter extends BaseAdapter {
+	// Adapter for inflating list view with edit text components
+	public class EditTextAdapter extends BaseAdapter {
+
 		private LayoutInflater mInflater;
 		public ArrayList<ListItem> myItems = new ArrayList<ListItem>();
 
-		public MyAdapter(int n) {
+		public EditTextAdapter(int n) {
 			mInflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
 			for (int i = 0; i < n; i++) {
 				ListItem listItem = new ListItem();
 				listItem.caption = "Player " + (i + 1);
@@ -191,6 +191,7 @@ public class MainActivity extends Activity implements
 
 		public View getView(int position, View convertView, ViewGroup parent) {
 			ViewHolder holder;
+
 			if (convertView == null) {
 				holder = new ViewHolder();
 				convertView = mInflater.inflate(R.layout.name, null);
@@ -199,6 +200,7 @@ public class MainActivity extends Activity implements
 			} else {
 				holder = (ViewHolder) convertView.getTag();
 			}
+
 			// Fill EditText with the value you have in data source
 			holder.caption.setText(myItems.get(position).caption);
 			holder.caption.setId(position);

@@ -13,7 +13,8 @@
         android:layout_marginLeft="2dip"
         android:singleLine="true"
         android:hint="@string/enter_name"
-        android:inputType="text"> 
+        android:inputType="text"
+        android:maxLength="10"> 
     </EditText>
 
 </LinearLayout>

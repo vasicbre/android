@@ -1,5 +1,5 @@
 package rs.ac.bg.etf.vn110012d; 
-
+ 
 import android.content.Context;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;

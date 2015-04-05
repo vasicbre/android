@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import rs.ac.bg.etf.vn110012d.MainActivity.MyAdapter;
+import rs.ac.bg.etf.vn110012d.MainActivity.EditTextAdapter;
 
 import android.app.Activity;
 import android.app.Dialog;
@@ -249,10 +249,13 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		refreshView();
 	}
 
+	// show dialog to ask player if ready to roll to avoid accidental shaking
+	// due to device passing
 	void nextMovePrompt() {
 		int nextId = (currentPlayer.getId() + 1) % playerCnt;
+		
 		final Dialog dialog = new Dialog(this);
-		dialog.setTitle(players[nextId].getName() + "is on the move");
+		dialog.setTitle(players[nextId].getName() + " is on the move");
 		dialog.setContentView(R.layout.next_move_dialog);
 
 		TextView tv = (TextView) dialog.findViewById(R.id.tv_question);
@@ -303,14 +306,13 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 	private void populateScoreCells(int id) {
 
-		GridView sum_grid = (GridView) findViewById(id);
+		GridView sumGrid = (GridView) findViewById(id);
 		ArrayList<String> strs = new ArrayList<String>();
 		for (int i = 0; i < 6; i++)
 			strs.add("");
 
 		ArrayAdapter<String> adapter = new ScoreCellAdapter(strs, this);
-
-		sum_grid.setAdapter(adapter);
+		sumGrid.setAdapter(adapter);
 	}
 
 	@Override
