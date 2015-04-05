@@ -28,7 +28,7 @@ public class MainActivity extends Activity implements
 
 	Button newgame, settings, history, resume;
 
-	int playerCnt;
+	int playerCnt = 1;
 
 	private ListView nameList;
 	private EditTextAdapter editTextAdapter;

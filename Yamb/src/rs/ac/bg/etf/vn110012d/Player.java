@@ -69,10 +69,13 @@ public class Player {
 
 	String name;
 
-	public Player(Player.Callback cb, int playerId, String name) {
+	Dice dice;
+
+	public Player(Player.Callback cb, int playerId, String name, Dice dice) {
 		this.cb = cb;
 		this.playerId = playerId;
 		this.name = name;
+		this.dice = dice;
 
 		initBoard();
 		initSums();
@@ -240,17 +243,17 @@ public class Player {
 	}
 
 	// set value on clicked cell
-	public void set(int id, int row, int col, int value) {
+	public int set(int id, int row, int col) {
 		int base = getRowBase(id);
 		availabilityMatrix[base + row][col] = UNAVAILABLE;
 
 		setNextAvailable(base + row, col);
 
-		board[base + row][col] = value;
+		int value = 0;
 
 		switch (base) {
 		case NUMBERS:
-
+			value = dice.calculateRegularValue(base + row);
 			if (numberSum[col] == EMPTY)
 				numberSum[col] = 0;
 
@@ -259,13 +262,20 @@ public class Player {
 			if (row != 0)
 				break;
 		case EXTREMES:
+			// need to check because of fall through
+			if (base == EXTREMES)
+				value = dice.calculateExtremeValue(row);
+
 			// required for calculating sum are fields: ones, max, min
 			if (board[0][col] != EMPTY && board[MAX][col] != EMPTY
 					&& board[MIN][col] != EMPTY)
 				extremeSum[col] = (board[MAX][col] - board[MIN][col])
 						* board[0][col];
+
 			break;
 		case SPECIALS:
+
+			value = dice.calculateSpecialValue(row, roll);
 
 			if (specialSum[col] == EMPTY)
 				specialSum[col] = 0;
@@ -274,8 +284,12 @@ public class Player {
 			break;
 		}
 
+		board[base + row][col] = value;
+
+		// TODO check if you need to call this here
 		cb.refreshView();
 
+		return value;
 	}
 
 	public int getTotalScore() {
@@ -318,132 +332,6 @@ public class Player {
 		return false;
 	}
 
-	private int calculateExtremeValue(int row, int[] diceValues) {
-		int value = 0;
-
-		// sorts in ascending order
-		Arrays.sort(diceValues);
-
-		// if calculating max, reverse array
-		if (row == MAX)
-			for (int i = 0; i < diceValues.length / 2; i++)
-				swap(diceValues, i, diceValues.length - i - 1);
-
-		for (int i = 0; i < 5; i++)
-			value += diceValues[i];
-
-		return value;
-	}
-
-	private int calculateRegularValue(int row, int[] diceValues) {
-		int value = 0;
-		for (int i = 0; i < diceValues.length; i++)
-			value += (diceValues[i] == row + 1) ? row + 1 : 0;
-
-		return value;
-	}
-
-	// returns highest 3-times-repeating character
-	private int repeating(int[] diceValues, int requiredCnt) {
-		int prev = 0;
-		int repCnt = 1;
-		int repValue = 0;
-		for (int i = 1; i < diceValues.length; i++) {
-			if (diceValues[i] == diceValues[prev]) {
-				repCnt++;
-				if (repCnt == requiredCnt)
-					repValue = diceValues[i];
-			} else
-				prev = i;
-		}
-
-		return repValue;
-	}
-
-	private boolean straightCheck(int[] diceValues) {
-		Set<Integer> set = new HashSet<Integer>();
-		for (int i = 0; i < diceValues.length; i++) {
-			set.add(diceValues[i]);
-		}
-
-		return set.size() >= 5;
-	}
-
-	// returns double and triple repeating sequences
-	private void findRepeatingSequences(int[] diceValues,
-			List<Integer> doubleRep, List<Integer> tripleRep) {
-		int prev = 0;
-		int repCnt = 1;
-		for (int i = 1; i < diceValues.length; i++) {
-			if (diceValues[i] == diceValues[prev]) {
-				repCnt++;
-				if (repCnt == 2)
-					doubleRep.add(diceValues[i]);
-				if (repCnt == 3)
-					tripleRep.add(diceValues[i]);
-			} else {
-				prev = i;
-				repCnt = 1;
-			}
-		}
-	}
-
-	// calculates value of full hand
-	private int fullValue(int[] diceValues) {
-		List<Integer> doubleRep = new ArrayList<Integer>();
-		List<Integer> tripleRep = new ArrayList<Integer>();
-		findRepeatingSequences(diceValues, doubleRep, tripleRep);
-
-		int tripleValue = 0;
-		int doubleValue = 0;
-
-		if (!tripleRep.isEmpty()) {
-			tripleValue = Collections.max(tripleRep);
-			// remove triple repeating value from double repeating list
-			doubleRep.remove(Integer.valueOf(tripleValue));
-
-			if (!doubleRep.isEmpty()) {
-				doubleValue = Collections.max(doubleRep);
-				return doubleValue * 2 + tripleValue * 3;
-			} else {
-				return 0;
-			}
-		} else
-			return 0;
-	}
-
-	private int calculateSpecialValue(int row, int[] diceValues) {
-		int value = 0;
-
-		Arrays.sort(diceValues);
-
-		switch (row) {
-		case TRILING: {
-			value = repeating(diceValues, 3) * 3;
-			return value > 0 ? value + TRILING_BONUS : 0;
-		}
-		case STRAIGHT: {
-			if (straightCheck(diceValues))
-				return roll == 1 ? 66 : (roll == 2 ? 56 : 46);
-			else
-				return 0;
-		}
-		case FULL: {
-			value = fullValue(diceValues);
-			return value > 0 ? value + FULL_BONUS : 0;
-		}
-		case POKER: {
-			value = repeating(diceValues, 4) * 4;
-			return value > 0 ? value + POKER_BONUS : 0;
-		}
-		case YAMB: {
-			value = repeating(diceValues, 5) * 5;
-			return value > 0 ? value + YAMB_BONUS : 0;
-		}
-		}
-		return value;
-	}
-
 	// calculate value to be entered in the cell
 	public int calculateValue(int id, int row, int col, int[] diceValues) {
 		int base = getRowBase(id);
@@ -451,13 +339,13 @@ public class Player {
 
 		switch (base) {
 		case NUMBERS: {
-			return calculateRegularValue(row, diceValues);
+			return dice.calculateRegularValue(row);
 		}
 		case EXTREMES: {
-			return calculateExtremeValue(row, diceValues);
+			return dice.calculateExtremeValue(row);
 		}
 		case SPECIALS: {
-			return calculateSpecialValue(row, diceValues);
+			return dice.calculateSpecialValue(row, roll);
 		}
 		default:
 			return 0;
@@ -466,7 +354,6 @@ public class Player {
 	}
 
 	public int getSumValue(int id, int col) {
-		int base = getRowBase(id);
 		switch (id) {
 		case R.id.num_sum:
 			return numberSum[col];
@@ -484,9 +371,4 @@ public class Player {
 		return board[base + row][col];
 	}
 
-	private void swap(int[] array, int pos1, int pos2) {
-		int temp = array[pos1];
-		array[pos1] = array[pos2];
-		array[pos2] = temp;
-	}
 }

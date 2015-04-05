@@ -29,9 +29,6 @@ import android.widget.TextView;
 public class GameplayActivity extends Activity implements Shaker.Callback,
 		Player.Callback, Runnable {
 
-	int[] diceValues;
-	boolean[] selectedDice;
-	boolean[] lockedDice;
 	boolean lockBoard;
 
 	private static final int SHAKE_THRESHOLD = 400;
@@ -39,9 +36,11 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 	private MediaPlayer mp;
 	Shaker shaker;
-	Player currentPlayer;
 
 	Player[] players;
+	Player currentPlayer;
+	Dice dice;
+
 	int playerCnt;
 
 	TextView tvMove, tvRoll, tvPlayer;
@@ -51,12 +50,14 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.game_layout);
 
+		dice = new Dice(this);
+
 		playerCnt = getIntent().getExtras().getInt("NUMBER_OF_PLAYERS");
 		players = new Player[playerCnt];
 
 		for (int i = 0; i < playerCnt; i++) {
 			players[i] = new Player(this, i, getIntent().getExtras().getString(
-					"PLAYER_" + i));
+					"PLAYER_" + i), dice);
 		}
 
 		tvMove = (TextView) findViewById(R.id.move_id);
@@ -66,7 +67,6 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		currentPlayer = players[0];
 
 		populateBoard();
-		loadDice();
 		updateInfo();
 
 		shaker = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
@@ -83,6 +83,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		shaker.register();
 	}
 
+	public Player getCurrentPlayer() {
+		return currentPlayer;
+	}
+
 	private void populateBoard() {
 		populateInputCells(R.id.num_board_grid, 36);
 		populateInputCells(R.id.min_max_grid, 12);
@@ -92,120 +96,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		populateScoreCells(R.id.spec_sum);
 	}
 
-	private void loadDice() {
-		ImageView[] dice = new ImageView[6];
-		diceValues = new int[6];
-		selectedDice = new boolean[6];
-		lockedDice = new boolean[6];
-
-		// init dice
-		for (int i = 0; i < 6; i++) {
-			diceValues[i] = i + 1;
-			selectedDice[i] = false;
-			lockedDice[i] = false;
-		}
-
-		for (int i = 0; i < 6; i++) {
-			dice[i] = (ImageView) findViewById(diceSlotId(i));
-			dice[i].setOnClickListener(new View.OnClickListener() {
-
-				@Override
-				public void onClick(View v) {
-					switch (v.getId()) {
-					case R.id.die1:
-						selectDice((ImageView) v, 0);
-						break;
-					case R.id.die2:
-						selectDice((ImageView) v, 1);
-						break;
-					case R.id.die3:
-						selectDice((ImageView) v, 2);
-						break;
-					case R.id.die4:
-						selectDice((ImageView) v, 3);
-						break;
-					case R.id.die5:
-						selectDice((ImageView) v, 4);
-						break;
-					case R.id.die6:
-						selectDice((ImageView) v, 5);
-						break;
-					}
-
-				}
-			});
-		}
-	}
-
-	private void selectDice(ImageView iv, int ord) {
-		// change selection is available only for dice that are not selected in
-		// previous moves after the first move
-		if (currentPlayer.getRoll() > 0 && !lockedDice[ord]) {
-			selectedDice[ord] = !selectedDice[ord];
-			iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
-		}
-	}
-
-	private int diceId(int ord, boolean selected) {
-		switch (ord) {
-		case 0:
-			if (selected)
-				return R.drawable.one_die_red;
-			else
-				return R.drawable.one_die;
-		case 1:
-			if (selected)
-				return R.drawable.two_die_red;
-			else
-				return R.drawable.two_die;
-		case 2:
-			if (selected)
-				return R.drawable.three_die_red;
-			else
-				return R.drawable.three_die;
-		case 3:
-			if (selected)
-				return R.drawable.four_die_red;
-			else
-				return R.drawable.four_die;
-		case 4:
-			if (selected)
-				return R.drawable.five_die_red;
-			else
-				return R.drawable.five_die;
-		case 5:
-			if (selected)
-				return R.drawable.six_die_red;
-			else
-				return R.drawable.six_die;
-		default:
-			return -1;
-		}
-	}
-
-	private int diceSlotId(int ord) {
-		switch (ord) {
-		case 0:
-			return R.id.die1;
-		case 1:
-			return R.id.die2;
-		case 2:
-			return R.id.die3;
-		case 3:
-			return R.id.die4;
-		case 4:
-			return R.id.die5;
-		case 5:
-			return R.id.die6;
-		default:
-			return -1;
-		}
-	}
-
-	boolean endOfMove = false;
-
 	private void populateInputCells(int id, int cnt) {
-		GridView num_grid = (GridView) findViewById(id);
+		GridView numGrid = (GridView) findViewById(id);
 
 		List<String> strs = new ArrayList<String>();
 		for (int i = 0; i < cnt; i++)
@@ -214,24 +106,29 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		ArrayAdapter<String> adapter = new InputCellAdapter(strs, this,
 				currentPlayer);
 
-		num_grid.setAdapter(adapter);
+		numGrid.setAdapter(adapter);
 
-		num_grid.setOnItemClickListener(new OnItemClickListener() {
-
+		numGrid.setOnItemClickListener(new OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
 
+				// if field is available for entering value
 				if (currentPlayer.isAvailable(parent.getId(), position / 6,
 						position % 6) && !lockBoard) {
+					
+					// if field is in call column
 					if (currentPlayer.isCall(parent.getId(), position % 6)) {
+						
+						// if call is already made
 						if (currentPlayer.isCallMade()) {
-							parent.postDelayed(GameplayActivity.this, 2000);
+							parent.postDelayed(GameplayActivity.this, 1000);
 						}
+						
 						currentPlayer.call(view, position, parent.getId());
 					} else {
 						enterValue(view, position, parent.getId());
-						parent.postDelayed(GameplayActivity.this, 2000);
+						parent.postDelayed(GameplayActivity.this, 1000);
 						lockBoard = true;
 					}
 				}
@@ -242,9 +139,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	public void enterValue(View view, int position, int parentId) {
 		TextView tv = (TextView) view.findViewById(R.id.num);
 		tv.setBackgroundResource(R.color.invalid_blue);
-		int value = currentPlayer.calculateValue(parentId, position / 6,
-				position % 6, Arrays.copyOf(diceValues, diceValues.length));
-		currentPlayer.set(parentId, position / 6, position % 6, value);
+		int value = currentPlayer.set(parentId, position / 6, position % 6);
 		tv.setText("" + value);
 		refreshView();
 	}
@@ -253,7 +148,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	// due to device passing
 	void nextMovePrompt() {
 		int nextId = (currentPlayer.getId() + 1) % playerCnt;
-		
+
 		final Dialog dialog = new Dialog(this);
 		dialog.setTitle(players[nextId].getName() + " is on the move");
 		dialog.setContentView(R.layout.next_move_dialog);
@@ -294,12 +189,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 		currentPlayer = players[nextId];
 
-		for (int i = 0; i < 6; i++) {
-			selectedDice[i] = false;
-			lockedDice[i] = false;
-			ImageView iv = (ImageView) findViewById(diceSlotId(i));
-			iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
-		}
+		dice.reset();
 
 		refreshView();
 	}
@@ -396,19 +286,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		}
 	}
 
-	// roll unselected dice
 	void rollDice() {
-		for (int i = 0; i < 6; i++) {
-			if (!selectedDice[i]) {
-				diceValues[i] = (int) (Math.random() * 6) + 1;
-				ImageView iv = (ImageView) findViewById(diceSlotId(i));
-				iv.setImageResource(diceId(diceValues[i] - 1, selectedDice[i]));
-			} else {
-				// if die is selected, lock it so it's selection cannot be
-				// changed in the next move
-				lockedDice[i] = true;
-			}
-		}
+		dice.roll();
 	}
 
 	public void shakingStarted() {
@@ -497,7 +376,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(1500);
+			Thread.sleep(1000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
