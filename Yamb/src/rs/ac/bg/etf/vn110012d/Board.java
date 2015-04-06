@@ -237,15 +237,17 @@ public class Board {
 	// set value on clicked cell
 	public int set(int id, int row, int col) {
 		int base = getRowBase(id);
-		availabilityMatrix[base + row][col] = UNAVAILABLE;
+		row += base;
 
-		setNextAvailable(base + row, col);
+		availabilityMatrix[row][col] = UNAVAILABLE;
+
+		setNextAvailable(row, col);
 
 		int value = 0;
 
 		switch (base) {
-		case NUMBERS:
-			value = dice.calculateRegularValue(base + row);
+		case NUMBERS: {
+			value = dice.calculateRegularValue(row);
 			if (numberSum[col] == EMPTY)
 				numberSum[col] = 0;
 
@@ -253,10 +255,11 @@ public class Board {
 			// fall through to update extreme values if ones are entered
 			if (row != 0)
 				break;
-		case EXTREMES:
+		}
+		case EXTREMES: {
 			// need to check because of fall through
 			if (base == EXTREMES)
-				value = dice.calculateExtremeValue(base + row);
+				value = dice.calculateExtremeValue(row);
 
 			// required for calculating sum are fields: ones, max, min
 			if (board[0][col] != EMPTY && board[MAX][col] != EMPTY
@@ -265,9 +268,9 @@ public class Board {
 						* board[0][col];
 
 			break;
-		case SPECIALS:
-
-			value = dice.calculateSpecialValue(base + row, roll);
+		}
+		case SPECIALS: {
+			value = dice.calculateSpecialValue(row, roll);
 
 			if (specialSum[col] == EMPTY)
 				specialSum[col] = 0;
@@ -275,8 +278,9 @@ public class Board {
 			specialSum[col] += value;
 			break;
 		}
+		}
 
-		board[base + row][col] = value;
+		board[row][col] = value;
 
 		// TODO check if you need to call this here
 		cb.refreshView();
@@ -330,19 +334,15 @@ public class Board {
 		row += base;
 
 		switch (base) {
-		case NUMBERS: {
+		case NUMBERS:
 			return dice.calculateRegularValue(row);
-		}
-		case EXTREMES: {
+		case EXTREMES:
 			return dice.calculateExtremeValue(row);
-		}
-		case SPECIALS: {
+		case SPECIALS:
 			return dice.calculateSpecialValue(row, roll);
-		}
 		default:
 			return 0;
 		}
-
 	}
 
 	public int getSumValue(int id, int col) {

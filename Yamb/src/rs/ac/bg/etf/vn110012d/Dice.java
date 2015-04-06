@@ -48,6 +48,39 @@ public class Dice {
 			});
 		}
 	}
+	
+	private void selectDice(View v) {
+		switch (v.getId()) {
+		case R.id.die1:
+			selectDie((ImageView) v, 0);
+			break;
+		case R.id.die2:
+			selectDie((ImageView) v, 1);
+			break;
+		case R.id.die3:
+			selectDie((ImageView) v, 2);
+			break;
+		case R.id.die4:
+			selectDie((ImageView) v, 3);
+			break;
+		case R.id.die5:
+			selectDie((ImageView) v, 4);
+			break;
+		case R.id.die6:
+			selectDie((ImageView) v, 5);
+			break;
+		}
+
+	}
+
+	public void selectDie(ImageView iv, int ord) {
+		// change selection is available only for dice that are not selected in
+		// previous moves after the first move
+		if (activity.getCurrentPlayer().getRoll() > 0 && !lockedDice[ord]) {
+			selectedDice[ord] = !selectedDice[ord];
+			iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
+		}
+	}
 
 	// calculate entered value in upper part of the board
 	public int calculateRegularValue(int row) {
@@ -76,11 +109,12 @@ public class Dice {
 		return value;
 	}
 
-	// returns highest n-times-repeating character
+	// returns highest n-times-repeating number
 	private int repeating(int n) {
 		int prev = 0;
 		int repCnt = 1;
 		int repValue = 0;
+		
 		for (int i = 1; i < diceValues.length; i++) {
 			if (diceValues[i] == diceValues[prev]) {
 				repCnt++;
@@ -93,6 +127,7 @@ public class Dice {
 		return repValue;
 	}
 
+	// check if there is sequence of five contiguous numbers
 	private boolean straightCheck() {
 		Set<Integer> set = new HashSet<Integer>();
 		for (int i = 0; i < diceValues.length; i++) {
@@ -124,6 +159,7 @@ public class Dice {
 	private int fullValue() {
 		List<Integer> doubleRep = new ArrayList<Integer>();
 		List<Integer> tripleRep = new ArrayList<Integer>();
+		
 		findRepeatingSequences(doubleRep, tripleRep);
 
 		int tripleValue = 0;
@@ -137,7 +173,7 @@ public class Dice {
 			if (!doubleRep.isEmpty()) {
 				doubleValue = Collections.max(doubleRep);
 				return doubleValue * 2 + tripleValue * 3;
-			} else {
+			} else {	// there is only triple number sequence
 				return 0;
 			}
 		} else
@@ -175,40 +211,7 @@ public class Dice {
 		}
 		}
 		return value;
-	}
-
-	private void selectDice(View v) {
-		switch (v.getId()) {
-		case R.id.die1:
-			selectDie((ImageView) v, 0);
-			break;
-		case R.id.die2:
-			selectDie((ImageView) v, 1);
-			break;
-		case R.id.die3:
-			selectDie((ImageView) v, 2);
-			break;
-		case R.id.die4:
-			selectDie((ImageView) v, 3);
-			break;
-		case R.id.die5:
-			selectDie((ImageView) v, 4);
-			break;
-		case R.id.die6:
-			selectDie((ImageView) v, 5);
-			break;
-		}
-
-	}
-
-	public void selectDie(ImageView iv, int ord) {
-		// change selection is available only for dice that are not selected in
-		// previous moves after the first move
-		if (activity.getCurrentPlayer().getRoll() > 0 && !lockedDice[ord]) {
-			selectedDice[ord] = !selectedDice[ord];
-			iv.setImageResource(diceId(diceValues[ord] - 1, selectedDice[ord]));
-		}
-	}
+	}	
 
 	public void reset() {
 		for (int i = 0; i < 6; i++) {

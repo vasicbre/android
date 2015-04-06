@@ -81,6 +81,7 @@ public class MainActivity extends Activity implements
 		return super.onOptionsItemSelected(item);
 	}
 
+	// player name entering
 	public void showNameDialog() {
 		final Dialog dialog = new Dialog(MainActivity.this);
 		dialog.setTitle("Enter names");
@@ -129,6 +130,7 @@ public class MainActivity extends Activity implements
 		dialog.show();
 	}
 
+	// number of players entering
 	public void showNumberPicker() {
 		final Dialog dialog = new Dialog(MainActivity.this);
 		dialog.setTitle("Set number of players");
@@ -140,7 +142,7 @@ public class MainActivity extends Activity implements
 		final NumberPicker np = (NumberPicker) dialog
 				.findViewById(R.id.number_picker);
 
-		np.setMaxValue(5);
+		np.setMaxValue(MAX_PLAYERS);
 		np.setMinValue(1);
 		np.setWrapSelectorWheel(false);
 		np.setOnValueChangedListener(this);

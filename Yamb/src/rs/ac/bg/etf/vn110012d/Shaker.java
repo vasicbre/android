@@ -10,6 +10,7 @@ import android.os.SystemClock;
 public class Shaker implements SensorEventListener {
 	public static final int MIN_TRESHOLD = 100;
 	public static final int MAX_TRESHOLD = 600;
+	public static final int END_SHAKE_TIME_GAP = 700;
 	
 	private SensorManager senSensorManager;
 	private Sensor senAccelerometer;

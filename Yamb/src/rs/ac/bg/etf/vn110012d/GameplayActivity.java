@@ -24,17 +24,12 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
-
 import rs.ac.bg.etf.vn110012d.HighScoreActivity.*;
 
 public class GameplayActivity extends Activity implements Shaker.Callback,
 		Board.Callback, Runnable,
 		SharedPreferences.OnSharedPreferenceChangeListener {
-
-	boolean lockBoard;
-
-	private static final int END_SHAKE_TIME_GAP = 700;
+	
 	public static final int MOVE_LIMIT = 78;
 	public static final int MOVE_LIMIT_TEST = 1;
 
@@ -56,30 +51,12 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 		dice = new Dice(this);
 
-		playerCnt = getIntent().getExtras().getInt("NUMBER_OF_PLAYERS");
-		playerBoards = new Board[playerCnt];
-
-		for (int i = 0; i < playerCnt; i++) {
-			playerBoards[i] = new Board(this, i, getIntent().getExtras()
-					.getString("PLAYER_" + i), dice);
-		}
-
-		tvMove = (TextView) findViewById(R.id.move_id);
-		tvRoll = (TextView) findViewById(R.id.roll_id);
-		tvPlayer = (TextView) findViewById(R.id.player_id);
-
-		currentBoard = playerBoards[0];
-
+		initBoards();
+		initView();
 		populateBoard();
 		updateInfo();
-
 		getPreferences();
-
-		shaker = new Shaker(this, shakingTreshold, END_SHAKE_TIME_GAP, this);
-		shaker.register();
-
-		PreferenceManager.getDefaultSharedPreferences(this)
-				.registerOnSharedPreferenceChangeListener(this);
+		initShaker();
 	}
 
 	protected void onPause() {
@@ -99,6 +76,32 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		shaker.setTrashold(shakingTreshold);
 	}
 
+	private void initBoards() {
+		playerCnt = getIntent().getExtras().getInt("NUMBER_OF_PLAYERS");
+		playerBoards = new Board[playerCnt];
+
+		for (int i = 0; i < playerCnt; i++) {
+			playerBoards[i] = new Board(this, i, getIntent().getExtras()
+					.getString("PLAYER_" + i), dice);
+		}
+
+		currentBoard = playerBoards[0];
+	}
+
+	private void initShaker() {
+		shaker = new Shaker(this, shakingTreshold, Shaker.END_SHAKE_TIME_GAP, this);
+		shaker.register();
+
+		PreferenceManager.getDefaultSharedPreferences(this)
+				.registerOnSharedPreferenceChangeListener(this);
+	}
+
+	private void initView() {
+		tvMove = (TextView) findViewById(R.id.move_id);
+		tvRoll = (TextView) findViewById(R.id.roll_id);
+		tvPlayer = (TextView) findViewById(R.id.player_id);
+	}
+
 	private void getPreferences() {
 		SharedPreferences prefs = PreferenceManager
 				.getDefaultSharedPreferences(this);
@@ -115,6 +118,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		return currentBoard;
 	}
 
+	// populate grid view entries with text views
 	private void populateBoard() {
 		populateInputCells(R.id.num_board_grid, 36);
 		populateInputCells(R.id.min_max_grid, 12);
@@ -143,23 +147,21 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 				// if field is available for entering value
 				if (currentBoard.isAvailable(parent.getId(), position / 6,
-						position % 6) && !lockBoard) {
+						position % 6)) {
 
 					// if field is in call column
 					if (currentBoard.isCall(parent.getId(), position % 6)) {
 
 						// if call is already made
 						if (currentBoard.isCallMade()) {
-							parent.postDelayed(GameplayActivity.this, 50);
+							parent.post(GameplayActivity.this);
 							shaker.unregister();
 						}
-
 						currentBoard.call(view, position, parent.getId());
 					} else {
 						enterValue(view, position, parent.getId());
-						parent.postDelayed(GameplayActivity.this, 50);
+						parent.post(GameplayActivity.this);
 						shaker.unregister();
-						lockBoard = true;
 					}
 				}
 			}
@@ -175,7 +177,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	}
 
 	// show dialog to ask player if ready to roll to avoid accidental shaking
-	// due to device passing
+	// due to device passing from hand to hand in multiplayer mode
 	void nextMovePrompt() {
 
 		if (checkEnd())
@@ -217,7 +219,6 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	// prepare dice for next move, called when value is entered
 	private void nextMove() {
 		int nextId = (currentBoard.getId() + 1) % playerCnt;
-		lockBoard = false;
 		currentBoard.incMove();
 		updateInfo();
 
@@ -230,7 +231,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	}
 
 	private boolean checkEnd() {
-		// if last player is done with last move
+		// if last player is done with the last move
 		if (currentBoard.getMove() >= moveLimit
 				&& currentBoard.getId() == playerCnt - 1) {
 			showScores();
@@ -240,6 +241,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		return false;
 	}
 
+	// called when game is finished
 	private void showScores() {
 
 		final Dialog dialog = new Dialog(this);
@@ -284,6 +286,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 	}
 
+	// populate grid view scores with text views
 	private void populateScoreCells(int id) {
 
 		GridView sumGrid = (GridView) findViewById(id);
