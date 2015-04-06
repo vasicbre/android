@@ -3,50 +3,6 @@
     android:layout_width="wrap_content"
     android:layout_height="wrap_content" >
 
-    <!-- <EditText -->
-    <!-- android:id="@+id/player_name1" -->
-    <!-- android:layout_width="match_parent" -->
-    <!-- android:layout_height="wrap_content" -->
-    <!-- android:hint="@string/player_1" -->
-    <!-- android:inputType="text" > -->
-    <!-- </EditText> -->
-
-
-    <!-- <EditText -->
-    <!-- android:id="@+id/player_name2" -->
-    <!-- android:layout_width="match_parent" -->
-    <!-- android:layout_height="wrap_content" -->
-    <!-- android:hint="@string/player_2" -->
-    <!-- android:inputType="text" > -->
-    <!-- </EditText> -->
-
-
-    <!-- <EditText -->
-    <!-- android:id="@+id/player_name3" -->
-    <!-- android:layout_width="match_parent" -->
-    <!-- android:layout_height="wrap_content" -->
-    <!-- android:hint="@string/player_3" -->
-    <!-- android:inputType="text" > -->
-    <!-- </EditText> -->
-
-
-    <!-- <EditText -->
-    <!-- android:id="@+id/player_name4" -->
-    <!-- android:layout_width="match_parent" -->
-    <!-- android:layout_height="wrap_content" -->
-    <!-- android:hint="@string/player_4" -->
-    <!-- android:inputType="text" > -->
-    <!-- </EditText> -->
-
-
-    <!-- <EditText -->
-    <!-- android:id="@+id/player_name5" -->
-    <!-- android:layout_width="match_parent" -->
-    <!-- android:layout_height="wrap_content" -->
-    <!-- android:hint="@string/player_5" -->
-    <!-- android:inputType="text" > -->
-    <!-- </EditText> -->
-
     <ListView
         android:id="@+id/list_view"
         android:layout_width="wrap_content"

@@ -36,5 +36,8 @@
     <string name="player_4">Player 4</string>
     <string name="player_5">Player 5</string>
     <string name="go">GO</string>
+    <string name="_1_name">1. Name</string>
+    <string name="_1360">1360</string>
+    <string name="high_scores">High Scores</string>
 
 </resources>
