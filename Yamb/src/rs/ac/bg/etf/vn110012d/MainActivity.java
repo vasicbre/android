@@ -2,6 +2,7 @@ package rs.ac.bg.etf.vn110012d;
 
 import java.util.ArrayList;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -186,6 +187,7 @@ public class MainActivity extends Activity implements
 			return position;
 		}
 
+		@SuppressLint("InflateParams")
 		public View getView(int position, View convertView, ViewGroup parent) {
 			ViewHolder holder;
 
