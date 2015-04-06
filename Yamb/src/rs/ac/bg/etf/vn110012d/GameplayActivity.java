@@ -1,14 +1,17 @@
 package rs.ac.bg.etf.vn110012d;
 
 import java.util.ArrayList;
-import java.util.List;
 
+import java.util.List;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -19,15 +22,21 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import rs.ac.bg.etf.vn110012d.HighScoreActivity.*;
 
 public class GameplayActivity extends Activity implements Shaker.Callback,
-		Board.Callback, Runnable {
+		Board.Callback, Runnable,
+		SharedPreferences.OnSharedPreferenceChangeListener {
 
 	boolean lockBoard;
 
-	private static final int SHAKE_THRESHOLD = 400;
-	private static final int END_SHAKE_TIME_GAP = 600;
+	private static final int END_SHAKE_TIME_GAP = 700;
+	public static final int MOVE_LIMIT = 78;
+	public static final int MOVE_LIMIT_TEST = 1;
 
 	private MediaPlayer mp;
 	Shaker shaker;
@@ -36,7 +45,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	Board currentBoard;
 	Dice dice;
 
-	int playerCnt;
+	int playerCnt, moveLimit, shakingTreshold = Shaker.MIN_TRESHOLD;
 
 	TextView tvMove, tvRoll, tvPlayer;
 
@@ -64,8 +73,13 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		populateBoard();
 		updateInfo();
 
-		shaker = new Shaker(this, SHAKE_THRESHOLD, END_SHAKE_TIME_GAP, this);
+		getPreferences();
+
+		shaker = new Shaker(this, shakingTreshold, END_SHAKE_TIME_GAP, this);
 		shaker.register();
+
+		PreferenceManager.getDefaultSharedPreferences(this)
+				.registerOnSharedPreferenceChangeListener(this);
 	}
 
 	protected void onPause() {
@@ -76,6 +90,25 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	protected void onResume() {
 		super.onResume();
 		shaker.register();
+	}
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		getPreferences();
+		shaker.setTrashold(shakingTreshold);
+	}
+
+	private void getPreferences() {
+		SharedPreferences prefs = PreferenceManager
+				.getDefaultSharedPreferences(this);
+		int pref = prefs.getInt("sensitivity", 50);
+		boolean testMode = prefs.getBoolean("testingMode", false);
+
+		moveLimit = testMode ? MOVE_LIMIT_TEST : MOVE_LIMIT;
+
+		shakingTreshold = (int) (Shaker.MIN_TRESHOLD + (pref / 100.f)
+				* (Shaker.MAX_TRESHOLD - Shaker.MIN_TRESHOLD));
 	}
 
 	public Board getCurrentPlayer() {
@@ -117,13 +150,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 						// if call is already made
 						if (currentBoard.isCallMade()) {
-							parent.postDelayed(GameplayActivity.this, 1000);
+							parent.postDelayed(GameplayActivity.this, 50);
+							shaker.unregister();
 						}
 
 						currentBoard.call(view, position, parent.getId());
 					} else {
 						enterValue(view, position, parent.getId());
-						parent.postDelayed(GameplayActivity.this, 1000);
+						parent.postDelayed(GameplayActivity.this, 50);
+						shaker.unregister();
 						lockBoard = true;
 					}
 				}
@@ -142,6 +177,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	// show dialog to ask player if ready to roll to avoid accidental shaking
 	// due to device passing
 	void nextMovePrompt() {
+
+		if (checkEnd())
+			return;
+
 		int nextId = (currentBoard.getId() + 1) % playerCnt;
 
 		final Dialog dialog = new Dialog(this);
@@ -172,6 +211,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		});
 
 		dialog.show();
+
 	}
 
 	// prepare dice for next move, called when value is entered
@@ -186,6 +226,62 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		dice.reset();
 
 		refreshView();
+		shaker.register();
+	}
+
+	private boolean checkEnd() {
+		// if last player is done with last move
+		if (currentBoard.getMove() >= moveLimit
+				&& currentBoard.getId() == playerCnt - 1) {
+			showScores();
+			return true;
+		}
+
+		return false;
+	}
+
+	private void showScores() {
+
+		final Dialog dialog = new Dialog(this);
+		dialog.setTitle("Game over");
+		dialog.setContentView(R.layout.score_dialog);
+
+		ListView lv = (ListView) dialog.findViewById(R.id.scores_list);
+
+		ArrayList<String> strs = new ArrayList<String>();
+		ArrayList<Integer> scores = new ArrayList<Integer>();
+
+		for (int i = 0; i < playerCnt; i++) {
+			strs.add(playerBoards[i].getName());
+			scores.add(playerBoards[i].getTotalScore());
+		}
+
+		ArrayAdapter<String> adapter = new ScoreAdapter(strs, scores,
+				dialog.getContext(), R.layout.highscore);
+		lv.setAdapter(adapter);
+
+		final Button ok = (Button) dialog.findViewById(R.id.ok_button);
+
+		ok.setOnClickListener(new View.OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				dialog.dismiss();
+				GameplayActivity.this.finish();
+			}
+		});
+
+		dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+
+			@Override
+			public void onCancel(DialogInterface dialog) {
+				dialog.dismiss();
+				GameplayActivity.this.finish();
+			}
+		});
+
+		dialog.show();
+
 	}
 
 	private void populateScoreCells(int id) {
@@ -213,6 +309,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
+			Intent i = new Intent(GameplayActivity.this, Settings.class);
+			startActivity(i);
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
@@ -370,7 +468,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	@Override
 	public void run() {
 		try {
-			Thread.sleep(1000);
+			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}

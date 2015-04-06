@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="testingMode"
+        android:summary="This option if selected will allow only 3 moves for each player."
+        android:title="Testing mode" />
+
+    <SeekBarPreference
+        android:id="@+id/seek2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10dp"
+        android:key="sensitivity"
+        android:max="100"
+        android:summary="Adjust shaking sensitivity"
+        android:title="Shaking sensitivity" />
+
+</PreferenceScreen>

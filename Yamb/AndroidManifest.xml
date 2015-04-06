@@ -35,6 +35,12 @@
             android:label="@string/high_scores"
             android:screenOrientation="portrait" >
         </activity>
+         <activity
+            android:name=".Settings"
+            android:label="@string/settings"
+            android:screenOrientation="portrait" >
+        </activity>
+        
     </application>
 
 </manifest>

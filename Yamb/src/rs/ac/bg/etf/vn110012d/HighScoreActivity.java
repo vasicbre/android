@@ -34,21 +34,23 @@ public class HighScoreActivity extends Activity {
 		}
 		
 
-		ArrayAdapter<String> adapter = new HighScoreAdapter(strs, scores, this);
+		ArrayAdapter<String> adapter = new ScoreAdapter(strs, scores, this, R.layout.highscore);
 		lv.setAdapter(adapter);
 	}
 	
-	public class HighScoreAdapter extends ArrayAdapter<String> {
+	public static class ScoreAdapter extends ArrayAdapter<String> {
 
 		private List<String> nameList;
 		private List<Integer> scoreList;
 		private Context context;
+		private int resource;
 
-		public HighScoreAdapter(List<String> strlist,  List<Integer> scoreList, Context ctx) {
+		public ScoreAdapter(List<String> strlist,  List<Integer> scoreList, Context ctx, int resource) {
 			super(ctx, R.layout.grid_cell, strlist);
 			this.nameList = strlist;
 			this.scoreList = scoreList;
 			this.context = ctx;
+			this.resource = resource;
 		}
 
 		public View getView(int position, View convertView, ViewGroup parent) {
@@ -57,9 +59,10 @@ public class HighScoreActivity extends Activity {
 				// This a new view we inflate the new layout
 				LayoutInflater inflater = (LayoutInflater) context
 						.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-				convertView = inflater.inflate(R.layout.highscore, parent,
+				convertView = inflater.inflate(resource, parent,
 						false);
 			}
+			
 			TextView tvName = (TextView) convertView.findViewById(R.id.tv_name);
 			TextView tvScore = (TextView) convertView.findViewById(R.id.tv_score);
 			

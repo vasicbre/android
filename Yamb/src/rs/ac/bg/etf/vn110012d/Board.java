@@ -256,7 +256,7 @@ public class Board {
 		case EXTREMES:
 			// need to check because of fall through
 			if (base == EXTREMES)
-				value = dice.calculateExtremeValue(row);
+				value = dice.calculateExtremeValue(base + row);
 
 			// required for calculating sum are fields: ones, max, min
 			if (board[0][col] != EMPTY && board[MAX][col] != EMPTY
@@ -267,7 +267,7 @@ public class Board {
 			break;
 		case SPECIALS:
 
-			value = dice.calculateSpecialValue(row, roll);
+			value = dice.calculateSpecialValue(base + row, roll);
 
 			if (specialSum[col] == EMPTY)
 				specialSum[col] = 0;
