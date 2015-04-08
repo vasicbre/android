@@ -14,25 +14,27 @@ import android.widget.TextView;
 
 public class HighScoreActivity extends Activity {
 
+	DataAccessHandler dataHandler ;
+	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		// TODO Auto-generated method stub
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.highscores);
-		populateScores();
+		dataHandler = new DataAccessHandler(this);
+		dataHandler.open();
+		populateScores();		
 	}
 
 	private void populateScores() {
 		ListView lv = (ListView) findViewById(R.id.high_scores);
-
-		ArrayList<String> strs = new ArrayList<String>();
+		
+		ArrayList<String> names = new ArrayList<String>();
 		ArrayList<Integer> scores = new ArrayList<Integer>();
-		for (int i = 0; i < 20; i++) {
-			strs.add("Name" + i);
-			scores.add(i * 10 + i * i);
-		}
-
-		ArrayAdapter<String> adapter = new ScoreAdapter(strs, scores, this,
+		
+		dataHandler.getAllScores(names, scores);
+	
+		ArrayAdapter<String> adapter = new ScoreAdapter(names, scores, this,
 				R.layout.highscore);
 		lv.setAdapter(adapter);
 	}

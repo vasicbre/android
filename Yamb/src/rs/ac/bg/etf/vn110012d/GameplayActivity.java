@@ -43,6 +43,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	int playerCnt, moveLimit, shakingTreshold = Shaker.MIN_TRESHOLD;
 
 	TextView tvMove, tvRoll, tvPlayer;
+	
+	DataAccessHandler dataHandler;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +52,9 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		setContentView(R.layout.game_layout);
 
 		dice = new Dice(this);
-
+		dataHandler = new DataAccessHandler(this);
+		dataHandler.open();
+		
 		initBoards();
 		initView();
 		populateBoard();
@@ -254,8 +258,11 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		ArrayList<Integer> scores = new ArrayList<Integer>();
 
 		for (int i = 0; i < playerCnt; i++) {
-			strs.add(playerBoards[i].getName());
-			scores.add(playerBoards[i].getTotalScore());
+			String name = playerBoards[i].getName();			
+			int score = playerBoards[i].getTotalScore();
+			strs.add(name);
+			scores.add(score);
+			dataHandler.addScore(name, score);
 		}
 
 		ArrayAdapter<String> adapter = new ScoreAdapter(strs, scores,
