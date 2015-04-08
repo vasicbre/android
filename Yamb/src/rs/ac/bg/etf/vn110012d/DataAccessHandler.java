@@ -52,8 +52,7 @@ public class DataAccessHandler {
 		return database.insert(MySQLiteHelper.PLAYER_TABLE, null, values);
 	}
 
-	public long addMove(int ord, int x, int y, int value, long gameId,
-			long playerId) {
+	public long addMove(int ord, long gameId, long playerId) {
 		ContentValues values = new ContentValues();
 		values.put(MySQLiteHelper.BOARD_X, 0);
 		values.put(MySQLiteHelper.BOARD_Y, 0);
@@ -63,7 +62,7 @@ public class DataAccessHandler {
 		values.put(MySQLiteHelper.ORD, ord);
 		return database.insert(MySQLiteHelper.MOVE_TABLE, null, values);
 	}
-	
+
 	public long addRoll(int ord, String result, String locked, int moveId) {
 		ContentValues values = new ContentValues();
 		values.put(MySQLiteHelper.ORD, ord);
@@ -72,14 +71,14 @@ public class DataAccessHandler {
 		values.put(MySQLiteHelper.LOCKED, locked);
 		return database.insert(MySQLiteHelper.ROLL_TABLE, null, values);
 	}
-	
+
 	public void updateGame(long gameId) {
 		String strFilter = MySQLiteHelper.ID + "=" + gameId;
 		ContentValues values = new ContentValues();
 		values.put(MySQLiteHelper.END, getDateTime());
 		database.update(MySQLiteHelper.GAME_TABLE, values, strFilter, null);
 	}
-	
+
 	public void updateMove(long moveId, int x, int y, int value) {
 		String strFilter = MySQLiteHelper.ID + "=" + moveId;
 		ContentValues values = new ContentValues();
@@ -88,14 +87,25 @@ public class DataAccessHandler {
 		values.put(MySQLiteHelper.VALUE, value);
 		database.update(MySQLiteHelper.MOVE_TABLE, values, strFilter, null);
 	}
-	
+
 	public void getAllScores(List<String> names, List<Integer> scores) {
-		Cursor cursor = database.query(MySQLiteHelper.SCORE_TABLE, allColumns,
-				null, null, null, null, null);
+
+		String[] args = { MySQLiteHelper.PLAYER_TABLE,
+				MySQLiteHelper.SCORE_TABLE,
+				MySQLiteHelper.PLAYER_TABLE + "." + MySQLiteHelper.ID,
+				MySQLiteHelper.SCORE_TABLE + "." + MySQLiteHelper.PLAYER_ID,
+				MySQLiteHelper.SCORE };
+
+		// TODO check why this works hardcoded, and fails with ?s and arguments
+		Cursor cursor = database
+				.rawQuery(
+						"select name, score from players, scores where players._id = scores.player_id order by score desc",
+						null);
+
 		cursor.moveToFirst();
 		while (!cursor.isAfterLast()) {
-			names.add(cursor.getString(1));
-			scores.add(cursor.getInt(2));
+			names.add(cursor.getString(0));
+			scores.add(cursor.getInt(1));
 			cursor.moveToNext();
 		}
 

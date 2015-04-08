@@ -56,16 +56,16 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 			+ " integer not null," + SCORE + " integer not null);";
 
 	private static final String CREATE_TABLE_MOVE = "create table "
-			+ MOVE_TABLE + "(" + ID + " integer primary key autoincrement"
+			+ MOVE_TABLE + "(" + ID + " integer primary key autoincrement,"
 			+ ORD + " integer not null," + BOARD_X + " integer not null, "
 			+ VALUE + " integer not null," + BOARD_Y + " integer not null,"
 			+ GAME_ID + " integer not null," + PLAYER_ID
 			+ " integer not null);";
 
 	private static final String CREATE_TABLE_ROLL = "create table "
-			+ ROLL_TABLE + "(" + ID + " integer primary key autoincrement"
+			+ ROLL_TABLE + "(" + ID + " integer primary key autoincrement,"
 			+ ORD + " integet not null," + RESULT + " text not null," + LOCKED
-			+ " text not null" + MOVE_ID + " integer not null);";
+			+ " text not null," + MOVE_ID + " integer not null);";
 
 	public MySQLiteHelper(Context context) {
 		super(context, DATABASE, null, DATABASE_VERSION);

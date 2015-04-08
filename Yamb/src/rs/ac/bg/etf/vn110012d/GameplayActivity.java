@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import android.app.Activity;
 import android.app.Dialog;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -29,7 +30,7 @@ import rs.ac.bg.etf.vn110012d.HighScoreActivity.*;
 public class GameplayActivity extends Activity implements Shaker.Callback,
 		Board.Callback, Runnable,
 		SharedPreferences.OnSharedPreferenceChangeListener {
-	
+
 	public static final int MOVE_LIMIT = 78;
 	public static final int MOVE_LIMIT_TEST = 1;
 
@@ -43,8 +44,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	int playerCnt, moveLimit, shakingTreshold = Shaker.MIN_TRESHOLD;
 
 	TextView tvMove, tvRoll, tvPlayer;
-	
+
 	DataAccessHandler dataHandler;
+	long gameId;
+	long[] playerIds;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +57,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		dice = new Dice(this);
 		dataHandler = new DataAccessHandler(this);
 		dataHandler.open();
-		
+		gameId = dataHandler.addGame();
+
 		initBoards();
 		initView();
 		populateBoard();
@@ -83,17 +87,20 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	private void initBoards() {
 		playerCnt = getIntent().getExtras().getInt("NUMBER_OF_PLAYERS");
 		playerBoards = new Board[playerCnt];
+		playerIds = new long[playerCnt];
 
 		for (int i = 0; i < playerCnt; i++) {
-			playerBoards[i] = new Board(this, i, getIntent().getExtras()
-					.getString("PLAYER_" + i), dice);
+			String name = getIntent().getExtras().getString("PLAYER_" + i);
+			playerBoards[i] = new Board(this, i, name, dice);
+			playerIds[i] = dataHandler.addPlayer(name);
 		}
 
 		currentBoard = playerBoards[0];
 	}
 
 	private void initShaker() {
-		shaker = new Shaker(this, shakingTreshold, Shaker.END_SHAKE_TIME_GAP, this);
+		shaker = new Shaker(this, shakingTreshold, Shaker.END_SHAKE_TIME_GAP,
+				this);
 		shaker.register();
 
 		PreferenceManager.getDefaultSharedPreferences(this)
@@ -258,11 +265,11 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		ArrayList<Integer> scores = new ArrayList<Integer>();
 
 		for (int i = 0; i < playerCnt; i++) {
-			String name = playerBoards[i].getName();			
+			String name = playerBoards[i].getName();
 			int score = playerBoards[i].getTotalScore();
 			strs.add(name);
 			scores.add(score);
-			dataHandler.addScore(name, score);
+			dataHandler.addScore(score, gameId, playerIds[i]);
 		}
 
 		ArrayAdapter<String> adapter = new ScoreAdapter(strs, scores,
