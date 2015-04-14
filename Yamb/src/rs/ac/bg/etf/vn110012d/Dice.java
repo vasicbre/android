@@ -48,7 +48,7 @@ public class Dice {
 			});
 		}
 	}
-	
+
 	private void selectDice(View v) {
 		switch (v.getId()) {
 		case R.id.die1:
@@ -114,7 +114,7 @@ public class Dice {
 		int prev = 0;
 		int repCnt = 1;
 		int repValue = 0;
-		
+
 		for (int i = 1; i < diceValues.length; i++) {
 			if (diceValues[i] == diceValues[prev]) {
 				repCnt++;
@@ -138,7 +138,8 @@ public class Dice {
 	}
 
 	// returns double and triple repeating sequences
-	private void findRepeatingSequences(List<Integer> doubleRep, List<Integer> tripleRep) {
+	private void findRepeatingSequences(List<Integer> doubleRep,
+			List<Integer> tripleRep) {
 		int prev = 0;
 		int repCnt = 1;
 		for (int i = 1; i < diceValues.length; i++) {
@@ -159,7 +160,7 @@ public class Dice {
 	private int fullValue() {
 		List<Integer> doubleRep = new ArrayList<Integer>();
 		List<Integer> tripleRep = new ArrayList<Integer>();
-		
+
 		findRepeatingSequences(doubleRep, tripleRep);
 
 		int tripleValue = 0;
@@ -173,7 +174,7 @@ public class Dice {
 			if (!doubleRep.isEmpty()) {
 				doubleValue = Collections.max(doubleRep);
 				return doubleValue * 2 + tripleValue * 3;
-			} else {	// there is only triple number sequence
+			} else { // there is only triple number sequence
 				return 0;
 			}
 		} else
@@ -211,7 +212,7 @@ public class Dice {
 		}
 		}
 		return value;
-	}	
+	}
 
 	public void reset() {
 		for (int i = 0; i < 6; i++) {
@@ -290,6 +291,37 @@ public class Dice {
 				return R.drawable.six_die;
 		default:
 			return -1;
+		}
+	}
+
+	public String strResult() {
+		StringBuffer s = new StringBuffer("");
+		for (int value : diceValues) {
+			s.append("" + value);
+		}
+		return s.toString();
+	}
+
+	public String strLocked() {
+		StringBuffer s = new StringBuffer("");
+		for (int i = 0; i < lockedDice.length; i++) {
+			if (lockedDice[i])
+				s.append("" + i);
+		}
+		return s.toString();
+	}
+	
+	public void setResult(String result) {
+		for(int i = 0; i < result.length(); i++) {
+			diceValues[i] = result.charAt(i) - '0';
+			ImageView iv = (ImageView) activity.findViewById(diceSlotId(i));
+			iv.setImageResource(diceId(diceValues[i] - 1, lockedDice[i]));
+		}
+	}
+	
+	public void setLocked(String locked) {
+		for(int i = 0; i < locked.length(); i++) {
+			lockedDice[locked.charAt(i) - '0'] = true;
 		}
 	}
 

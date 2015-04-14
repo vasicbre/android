@@ -219,13 +219,22 @@ public class Board {
 		}
 	}
 
-	private int getRowBase(long id) {
+	public static int getRowBase(long id) {
 		if (id == R.id.num_board_grid)
 			return NUMBERS;
 		else if (id == R.id.min_max_grid)
 			return EXTREMES;
 		else
 			return SPECIALS;
+	}
+	
+	public static long getParentViewId(int row) {
+		if(row < EXTREMES)
+			return R.id.num_board_grid;
+		if(row < SPECIALS)
+			return R.id.min_max_grid;
+		
+		return R.id.spec_grid;
 	}
 
 	// check is cell available for entry

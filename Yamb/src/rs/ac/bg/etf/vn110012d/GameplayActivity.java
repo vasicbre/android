@@ -46,25 +46,43 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	TextView tvMove, tvRoll, tvPlayer;
 
 	DataAccessHandler dataHandler;
-	long gameId;
+	long gameId, currentMove, currentRoll;
 	long[] playerIds;
+
+	Simulator sim;
+	boolean simulation = false;
+	int simulationId;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.game_layout);
 
+		if (getIntent().getExtras().get("SIMULATION_ID") != null) {
+			simulationId = getIntent().getExtras().getInt("SIMULATION_ID");
+			simulation = true;
+		}
+
 		dice = new Dice(this);
-		dataHandler = new DataAccessHandler(this);
-		dataHandler.open();
-		gameId = dataHandler.addGame();
+
+		if (!simulation) {
+			dataHandler = new DataAccessHandler(this);
+			dataHandler.open();
+			gameId = dataHandler.addGame();
+		}
 
 		initBoards();
 		initView();
 		populateBoard();
 		updateInfo();
+
 		getPreferences();
 		initShaker();
+
+		if (simulation) {
+			sim = new Simulator(getApplicationContext(), simulationId, this);
+			sim.start();
+		}
 	}
 
 	protected void onPause() {
@@ -74,7 +92,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 	protected void onResume() {
 		super.onResume();
-		shaker.register();
+		if (!simulation)
+			shaker.register();
 	}
 
 	@Override
@@ -92,16 +111,24 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		for (int i = 0; i < playerCnt; i++) {
 			String name = getIntent().getExtras().getString("PLAYER_" + i);
 			playerBoards[i] = new Board(this, i, name, dice);
-			playerIds[i] = dataHandler.addPlayer(name);
+
+			if (!simulation)
+				playerIds[i] = dataHandler.addPlayer(name, gameId, i);
 		}
 
 		currentBoard = playerBoards[0];
+
+		if (!simulation)
+			currentMove = dataHandler.addMove(currentBoard.getMove(), gameId,
+					playerIds[0]);
 	}
 
 	private void initShaker() {
 		shaker = new Shaker(this, shakingTreshold, Shaker.END_SHAKE_TIME_GAP,
 				this);
-		shaker.register();
+
+		if (!simulation)
+			shaker.register();
 
 		PreferenceManager.getDefaultSharedPreferences(this)
 				.registerOnSharedPreferenceChangeListener(this);
@@ -184,6 +211,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		tv.setBackgroundResource(R.color.invalid_blue);
 		int value = currentBoard.set(parentId, position / 6, position % 6);
 		tv.setText("" + value);
+
+		if (!simulation)
+			dataHandler.updateMove(currentMove, Board.getRowBase(parentId)
+					+ (position / 6), position % 6, value);
 		refreshView();
 	}
 
@@ -223,8 +254,10 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 			}
 		});
 
-		dialog.show();
-
+		if (!simulation)
+			dialog.show();
+		else
+			nextMove();
 	}
 
 	// prepare dice for next move, called when value is entered
@@ -235,10 +268,18 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 
 		currentBoard = playerBoards[nextId];
 
+		if (!simulation)
+			currentMove = dataHandler.addMove(currentBoard.getMove(), gameId,
+					playerIds[nextId]);
+
 		dice.reset();
 
 		refreshView();
-		shaker.register();
+
+		if (!simulation)
+			shaker.register();
+		else
+			sim.moveFinished();
 	}
 
 	private boolean checkEnd() {
@@ -269,7 +310,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 			int score = playerBoards[i].getTotalScore();
 			strs.add(name);
 			scores.add(score);
-			dataHandler.addScore(score, gameId, playerIds[i]);
+			if (!simulation)
+				dataHandler.addScore(score, gameId, playerIds[i]);
 		}
 
 		ArrayAdapter<String> adapter = new ScoreAdapter(strs, scores,
@@ -396,16 +438,23 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	}
 
 	void rollDice() {
-		dice.roll();
+		if (!simulation)
+			dice.roll();
+		else {
+			dice.setLocked(sim.getLocked());
+			dice.setResult(sim.getResult());
+		}
 	}
 
 	public void shakingStarted() {
 		if (currentBoard.getRoll() == 3)
 			return;
 
-		if (mp == null || !mp.isPlaying()) {
-			mp = MediaPlayer.create(getApplicationContext(), R.raw.shake);
-			mp.start();
+		if (!simulation) {
+			if (mp == null || !mp.isPlaying()) {
+				mp = MediaPlayer.create(getApplicationContext(), R.raw.shake);
+				mp.start();
+			}
 		}
 
 		rollDice();
@@ -419,8 +468,12 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 			mp.stop();
 		}
 
-		mp = MediaPlayer.create(getApplicationContext(), R.raw.roll);
-		mp.start();
+		if (!simulation) {
+			mp = MediaPlayer.create(getApplicationContext(), R.raw.roll);
+			mp.start();
+			currentRoll = dataHandler.addRoll(currentBoard.getRoll(),
+					dice.strResult(), dice.strLocked(), currentMove);
+		}
 		currentBoard.incRoll();
 		updateInfo();
 	}

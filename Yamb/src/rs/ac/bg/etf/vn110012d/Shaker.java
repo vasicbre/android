@@ -11,7 +11,7 @@ public class Shaker implements SensorEventListener {
 	public static final int MIN_TRESHOLD = 100;
 	public static final int MAX_TRESHOLD = 600;
 	public static final int END_SHAKE_TIME_GAP = 700;
-	
+
 	private SensorManager senSensorManager;
 	private Sensor senAccelerometer;
 	private long lastUpdate = 0;
@@ -21,6 +21,7 @@ public class Shaker implements SensorEventListener {
 	private long timeGap;
 	private Shaker.Callback cb;
 	private Context context;
+	private boolean registred = false;
 
 	public Shaker(Context context, int shakeTreshold, long timeGap,
 			Shaker.Callback cb) {
@@ -29,7 +30,7 @@ public class Shaker implements SensorEventListener {
 		this.cb = cb;
 		this.context = context;
 
-		register();
+		// register();
 
 	}
 
@@ -46,10 +47,15 @@ public class Shaker implements SensorEventListener {
 				.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		senSensorManager.registerListener(this, senAccelerometer,
 				SensorManager.SENSOR_DELAY_NORMAL);
+
+		registred = true;
 	}
 
 	public void unregister() {
-		senSensorManager.unregisterListener(this);
+		if (registred) {
+			senSensorManager.unregisterListener(this);
+			registred = false;
+		}
 	}
 
 	private void shaking() {

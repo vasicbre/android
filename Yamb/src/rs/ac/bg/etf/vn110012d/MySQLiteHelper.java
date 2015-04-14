@@ -48,7 +48,8 @@ public class MySQLiteHelper extends SQLiteOpenHelper {
 
 	private static final String CREATE_TABLE_PLAEYR = "create table "
 			+ PLAYER_TABLE + "(" + ID + " integer primary key autoincrement"
-			+ "," + NAME + " text not null" + ");";
+			+ "," + NAME + " text not null," + GAME_ID + " integer not null,"
+			+ ORD + " integer not null);";
 
 	private static final String CREATE_TABLE_SCORE = "create table "
 			+ SCORE_TABLE + "(" + ID + " integer primary key autoincrement"
