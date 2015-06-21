@@ -9,7 +9,7 @@ import android.widget.GridView;
 public class Simulator extends Thread {
 
 	List<Player> players;
-	int player, move, roll;
+	int player, move, roll, moveCnt;
 
 	String locked, result;
 
@@ -25,6 +25,7 @@ public class Simulator extends Thread {
 		dataHandler.open();
 		players = dataHandler.getPlayers(gameId);
 		player = move = roll = 0;
+		moveCnt = countMoves();
 		this.cb = cb;
 		/*
 		 * currentCnt = totalCnt = 0;
@@ -33,6 +34,29 @@ public class Simulator extends Thread {
 		 * players.get(i).moves.size(); j++) for (int k = 0; k <
 		 * players.get(i).moves.get(j).rolls.size(); k++) totalCnt++;
 		 */
+	}
+
+	private int countMoves() {
+		int cnt = 0;
+		Move prev = null;
+		for (Move m : players.get(0).moves) {
+			if(prev == null) {
+				prev = m;
+				cnt++;
+			}
+			else {
+				if(m.x != prev.x || m.y != prev.y)
+					cnt++;
+				
+				prev = m;
+			}
+		}
+		
+		return cnt;
+	}
+
+	public int getMoveCnt() {
+		return moveCnt;
 	}
 
 	public synchronized String getLocked() {
@@ -49,7 +73,7 @@ public class Simulator extends Thread {
 
 	public void run() {
 		try {
-
+			int cnt = 0;
 			while (true) {
 
 				Player p = players.get(player);
@@ -105,6 +129,7 @@ public class Simulator extends Thread {
 					break;
 
 				player = (player + 1) % players.size();
+				cnt++;
 
 			}
 		} catch (InterruptedException e) {

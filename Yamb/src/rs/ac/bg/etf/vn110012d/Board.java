@@ -148,6 +148,7 @@ public class Board {
 			cb.enterValue(view, position, parentId);
 			callLocked = false;
 		} else {
+			
 			callLocked = true;
 			for (int i = 0; i < BOARD_HEIGHT * BOARD_WIDTH; i++) {
 				int row = i / BOARD_WIDTH;

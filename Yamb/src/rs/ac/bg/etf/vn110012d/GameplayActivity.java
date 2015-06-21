@@ -32,7 +32,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		SharedPreferences.OnSharedPreferenceChangeListener {
 
 	public static final int MOVE_LIMIT = 78;
-	public static final int MOVE_LIMIT_TEST = 1;
+	public static final int MOVE_LIMIT_TEST = 5;
 
 	private MediaPlayer mp;
 	Shaker shaker;
@@ -71,6 +71,9 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 			gameId = dataHandler.addGame();
 		}
 
+		if (simulation) 
+			sim = new Simulator(getApplicationContext(), simulationId, this);
+			
 		initBoards();
 		initView();
 		populateBoard();
@@ -80,7 +83,6 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		initShaker();
 
 		if (simulation) {
-			sim = new Simulator(getApplicationContext(), simulationId, this);
 			sim.start();
 		}
 	}
@@ -147,6 +149,8 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 		boolean testMode = prefs.getBoolean("testingMode", false);
 
 		moveLimit = testMode ? MOVE_LIMIT_TEST : MOVE_LIMIT;
+		if(simulation)
+			moveLimit = sim.getMoveCnt();
 
 		shakingTreshold = (int) (Shaker.MIN_TRESHOLD + (pref / 100.f)
 				* (Shaker.MAX_TRESHOLD - Shaker.MIN_TRESHOLD));
@@ -194,6 +198,15 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 						if (currentBoard.isCallMade()) {
 							parent.post(GameplayActivity.this);
 							shaker.unregister();
+						} 
+						else {
+							if (!simulation) {
+								dataHandler.updateMove(currentMove, Board.getRowBase(parent.getId())
+										+ (position / 6), position % 6, 0);
+								
+								currentMove = dataHandler.addMove(currentBoard.getMove(), gameId,
+										playerIds[currentBoard.getId()]);									
+							}
 						}
 						currentBoard.call(view, position, parent.getId());
 					} else {
@@ -221,7 +234,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	// show dialog to ask player if ready to roll to avoid accidental shaking
 	// due to device passing from hand to hand in multiplayer mode
 	void nextMovePrompt() {
-
+		currentBoard.incMove();
 		if (checkEnd())
 			return;
 
@@ -263,7 +276,7 @@ public class GameplayActivity extends Activity implements Shaker.Callback,
 	// prepare dice for next move, called when value is entered
 	private void nextMove() {
 		int nextId = (currentBoard.getId() + 1) % playerCnt;
-		currentBoard.incMove();
+		
 		updateInfo();
 
 		currentBoard = playerBoards[nextId];
